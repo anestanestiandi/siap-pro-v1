@@ -1,0 +1,30 @@
+TABLE: kunjungan_kerja
+  id_kunjungan         | bigint               | NO        
+  id_jenis_kunjungan   | int                  | NO        
+  id_petugas           | int                  | YES       
+  id_anggota           | int                  | YES       
+  nama_kegiatan        | varchar(500)         | NO        
+  tanggal_kunjungan    | date                 | NO        
+  waktu                | time                 | NO        
+  tipe_tujuan          | enum('dalam_negeri','luar_negeri') | NO        
+  rombongan            | varchar(255)         | NO        
+  id_provinsi          | int                  | YES       
+  created_by           | int                  | YES       
+  updated_by           | int                  | YES       
+  created_at           | timestamp            | YES       
+  updated_at           | timestamp            | YES       
+TABLE: master_jenis_kunjungan
+  id_jenis_kunjungan   | int                  | NO        
+  nama_jenis           | varchar(255)         | NO        
+  tipe                 | enum('dalam_negeri','luar_negeri') | NO        
+  deskripsi            | text                 | YES       
+  is_active            | tinyint(1)           | YES       
+  created_at           | timestamp            | YES       
+  updated_at           | timestamp            | YES       
+TABLE: master_provinsi
+  id_provinsi          | int                  | NO        
+  nama_provinsi        | varchar(255)         | NO        
+  kode_provinsi        | varchar(10)          | YES       
+  is_active            | tinyint(1)           | YES       
+  created_at           | timestamp            | YES       
+  updated_at           | timestamp            | YES       
