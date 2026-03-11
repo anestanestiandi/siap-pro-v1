@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
+use App\Models\AppSetting;
 
 class ManagementUserController extends Controller
 {
@@ -34,7 +35,7 @@ class ManagementUserController extends Controller
         }
 
         // Order by latest
-        $users = $query->latest()->paginate(10)->withQueryString();
+        $users = $query->latest()->paginate(10)->onEachSide(1)->withQueryString();
 
         return view('management-user.index', compact('users'));
     }
@@ -140,28 +141,32 @@ class ManagementUserController extends Controller
      */
     public function destroy(string $id)
     {
-        $user = User::findOrFail($id);
+        try {
+            $user = User::findOrFail($id);
 
-        // Prevent deleting self
-        if ($user->id_user === auth()->id()) {
-            return back()->with('error', 'Anda tidak dapat menghapus akun sendiri.');
+            // Prevent deleting self
+            if ($user->id_user === auth()->id()) {
+                return back()->with('error', 'Anda tidak dapat menghapus akun sendiri.');
+            }
+
+            $deletedUsername = $user->username;
+            $deletedUserId   = $user->id_user;
+            $user->delete();
+
+            HistoryLog::create([
+                'model_type'  => User::class,
+                'model_id'    => $deletedUserId,
+                'user_id'     => Auth::id(),
+                'action'      => 'delete',
+                'description' => 'User dihapus: ' . $deletedUsername,
+                'status'      => 'success',
+            ]);
+
+            return redirect()->route('management-user.index')
+                        ->with('success', 'User berhasil dihapus.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-
-        $deletedUsername = $user->username;
-        $deletedUserId   = $user->id_user;
-        $user->delete();
-
-        HistoryLog::create([
-            'model_type'  => User::class,
-            'model_id'    => $deletedUserId,
-            'user_id'     => Auth::id(),
-            'action'      => 'delete',
-            'description' => 'User dihapus: ' . $deletedUsername,
-            'status'      => 'success',
-        ]);
-
-        return redirect()->route('management-user.index')
-            ->with('success', 'User berhasil dihapus.');
     }
 
     /**

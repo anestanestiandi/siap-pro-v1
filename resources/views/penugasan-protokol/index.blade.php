@@ -22,8 +22,78 @@
         }
     </style>
 
-    <div x-data="penugasanHandler()" x-init="init()" class="pt-2">
-        <div class="max-w-7xl mx-auto">
+    <div x-data="penugasanHandler()" x-init="init()" class="-mt-2 pb-12">
+        {{-- Removed max-w-7xl container to match other modules width --}}
+
+            {{-- Filter Bar --}}
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
+                <form action="{{ route('penugasan-protokol') }}" method="GET"
+                    class="flex flex-col lg:flex-row gap-4 items-center">
+
+                    {{-- Month Filter --}}
+                    <div class="w-full lg:w-44">
+                        <select name="month" onchange="this.form.submit()"
+                            class="block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:ring-blue-500 focus:border-blue-500 rounded-lg">
+                            <option value="">Semua Bulan</option>
+                            @foreach(range(1, 12) as $m)
+                                <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>
+                                    {{ \Carbon\Carbon::create()->month($m)->isoFormat('MMMM') }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Year Filter --}}
+                    <div class="w-full lg:w-36">
+                        <select name="year" onchange="this.form.submit()"
+                            class="block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:ring-blue-500 focus:border-blue-500 rounded-lg">
+                            <option value="">Semua Tahun</option>
+                            @foreach(range(date('Y'), 2020) as $y)
+                                <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>
+                                    {{ $y }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Search --}}
+                    <div class="relative flex-1 w-full" x-data="{ searchQuery: '{{ request('search') }}' }">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                fill="currentColor">
+                                <path fill-rule="evenodd"
+                                    d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <input type="text" name="search" x-model="searchQuery"
+                            class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Cari nama petugas...">
+                        
+                        {{-- Clear Button --}}
+                        <button type="button" x-show="searchQuery.length > 0" 
+                            @click="searchQuery = ''; $nextTick(() => $el.closest('form').submit())"
+                            class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition" x-cloak>
+                            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    {{-- Reset Button --}}
+                    <div class="w-full lg:w-auto">
+                        <a href="{{ route('penugasan-protokol') }}"
+                            class="inline-flex items-center justify-center w-full lg:w-auto gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg transition shadow-sm whitespace-nowrap border border-gray-200">
+                            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                            </svg>
+                            Reset
+                        </a>
+                    </div>
+                </form>
+            </div>
 
             {{-- Skeleton Loading --}}
             <div x-show="pageLoading" x-cloak class="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-pulse">
@@ -60,23 +130,13 @@
 
                     @forelse($petugas as $index => $p)
                         @php
-                            // Premium Color Palette
-                            $colors = [
-                                ['bg' => 'bg-indigo-100', 'text' => 'text-indigo-700', 'bar' => 'from-indigo-500 to-blue-600'],
-                                ['bg' => 'bg-emerald-100', 'text' => 'text-emerald-700', 'bar' => 'from-emerald-500 to-teal-600'],
-                                ['bg' => 'bg-amber-100', 'text' => 'text-amber-700', 'bar' => 'from-amber-500 to-orange-600'],
-                                ['bg' => 'bg-rose-100', 'text' => 'text-rose-700', 'bar' => 'from-rose-500 to-pink-600'],
-                                ['bg' => 'bg-violet-100', 'text' => 'text-violet-700', 'bar' => 'from-violet-500 to-purple-600'],
-                                ['bg' => 'bg-sky-100', 'text' => 'text-sky-700', 'bar' => 'from-sky-500 to-indigo-600'],
-                            ];
-                            $style = $colors[$index % count($colors)];
-
+                            $style = $p->style;
                             $maxCount = $petugas->max('total_count') ?: 1;
                             $percentage = ($p->total_count / $maxCount) * 100;
                             $percentage = max($percentage, 8); 
                         @endphp
 
-                        <div @click="selectOfficer({{ $p->id_petugas }})"
+                        <div @click="selectOfficer({{ $p->id_petugas }}, '{{ $style['header'] }}', '{{ $style['hex_from'] }}', '{{ $style['hex_to'] }}')"
                             :class="{'active': selectedId === {{ $p->id_petugas }}}"
                             class="officer-card group relative bg-white rounded-2xl p-4 border border-gray-100 cursor-pointer hover:border-blue-200 shadow-sm overflow-hidden">
                             
@@ -168,6 +228,9 @@
                          class="bg-white rounded-3xl shadow-2xl shadow-gray-200/50 border border-gray-100 overflow-hidden relative"
                          style="display: none;">
                         
+                        {{-- Force Tailwind to compile these classes --}}
+                        <div class="hidden from-indigo-600 to-blue-700 from-emerald-500 to-teal-600 from-amber-500 to-orange-600 from-rose-500 to-pink-600 from-violet-500 to-purple-600 from-sky-500 to-indigo-600"></div>
+                        
                         {{-- Loading Overlay --}}
                         <div x-show="isLoading" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex items-center justify-center">
                             <div class="text-center">
@@ -177,7 +240,9 @@
                         </div>
 
                         {{-- Card Header --}}
-                        <div class="relative h-20 bg-gradient-to-r from-blue-600 to-indigo-700 p-4 flex items-center">
+                        <div class="relative h-20 p-4 flex items-center bg-gradient-to-r"
+                             :class="activeHeaderStyle"
+                             :style="activeHexFrom ? `background: linear-gradient(to right, ${activeHexFrom}, ${activeHexTo})` : ''">
                             {{-- Pattern Overlay --}}
                             <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 16px 16px;"></div>
                             
@@ -254,7 +319,7 @@
 
                 </div>
             </div>
-        </div>
+        {{-- End of main content --}}
     </div>
 
     <script>
@@ -262,26 +327,45 @@
             return {
                 pageLoading: true,
                 selectedId: null,
+                activeHeaderStyle: '',
+                activeHexFrom: '',
+                activeHexTo: '',
                 isLoading: false,
                 detailData: null,
 
                 init() {
                     setTimeout(() => this.pageLoading = false, 800);
                     // Start with the first officer if available
-                    const firstId = {{ $petugas->first()->id_petugas ?? 'null' }};
-                    if (firstId) {
-                        this.selectOfficer(firstId);
-                    }
+                    @if($petugas->count() > 0)
+                        @php $first = $petugas->first(); @endphp
+                        this.selectOfficer({{ $first->id_petugas }}, '{{ $first->style['header'] }}', '{{ $first->style['hex_from'] }}', '{{ $first->style['hex_to'] }}');
+                    @endif
                 },
 
-                selectOfficer(id) {
+                selectOfficer(id, headerStyle, hexFrom, hexTo) {
                     if (this.selectedId === id && this.detailData) return;
 
                     this.selectedId = id;
+                    this.activeHeaderStyle = headerStyle;
+                    this.activeHexFrom = hexFrom;
+                    this.activeHexTo = hexTo;
                     this.isLoading = true;
                     this.detailData = null;
 
-                    fetch(`{{ url('/penugasan-protokol') }}/${id}`)
+                    // Build query params for filters
+                    const month = "{{ request('month') }}";
+                    const year = "{{ request('year') }}";
+                    let url = `{{ url('/penugasan-protokol') }}/${id}`;
+                    
+                    const params = new URLSearchParams();
+                    if (month) params.append('month', month);
+                    if (year) params.append('year', year);
+                    
+                    if (params.toString()) {
+                        url += `?${params.toString()}`;
+                    }
+
+                    fetch(url)
                         .then(response => response.json())
                         .then(data => {
                             this.detailData = data;

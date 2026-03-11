@@ -33,6 +33,9 @@
             @elseif(request()->routeIs('penugasan-protokol*'))
                 <h1 class="text-xl font-bold text-gray-900">Penugasan Protokol</h1>
                 <p class="text-sm text-gray-500">Daftar penugasan tim protokol</p>
+            @elseif(request()->routeIs('management-user.display-settings'))
+                <h1 class="text-xl font-bold text-gray-900">Pengaturan Tampilan Tabel</h1>
+                <p class="text-sm text-gray-500">Kelola visibilitas kolom tabel berdasarkan role user.</p>
             @elseif(request()->routeIs('management-user*'))
                 <h1 class="text-xl font-bold text-gray-900">Management User</h1>
                 <p class="text-sm text-gray-500">Kelola data pengguna aplikasi</p>
@@ -55,8 +58,8 @@
         {{-- Pelayanan Keprotokolan --}}
         @if($routeName === 'pelayanan-keprotokolan')
             {{-- Search Bar --}}
-            <div class="relative hidden sm:block">
-                <form action="{{ route('pelayanan-keprotokolan') }}" method="GET">
+            <div class="relative hidden sm:block" x-data="{ searchQuery: '{{ request('search') }}' }">
+                <form action="{{ route('pelayanan-keprotokolan') }}" method="GET" x-ref="searchForm">
                     <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                         <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                             stroke-width="2" stroke="currentColor">
@@ -64,8 +67,17 @@
                                 d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                         </svg>
                     </div>
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari kegiatan..."
-                        class="w-64 pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:border-[#3B5286] focus:ring focus:ring-[#3B5286] focus:ring-opacity-20 placeholder-gray-400 transition">
+                    <input type="text" name="search" x-model="searchQuery" placeholder="Cari kegiatan..."
+                        class="w-64 pl-10 pr-10 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:border-[#3B5286] focus:ring focus:ring-[#3B5286] focus:ring-opacity-20 placeholder-gray-400 transition">
+                    
+                    {{-- Clear Button --}}
+                    <button type="button" x-show="searchQuery.length > 0" @click="searchQuery = ''; $nextTick(() => $refs.searchForm.submit())"
+                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition" x-cloak>
+                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+
                     @if(request('date')) <input type="hidden" name="date" value="{{ request('date') }}"> @endif
                     @if(request('month')) <input type="hidden" name="month" value="{{ request('month') }}"> @endif
                     @if(request('year')) <input type="hidden" name="year" value="{{ request('year') }}"> @endif
@@ -88,8 +100,8 @@
         {{-- Persidangan --}}
         @if($routeName === 'persidangan')
             {{-- Search Bar --}}
-            <div class="relative hidden sm:block">
-                <form action="{{ route('persidangan') }}" method="GET">
+            <div class="relative hidden sm:block" x-data="{ searchQuery: '{{ request('search') }}' }">
+                <form action="{{ route('persidangan') }}" method="GET" x-ref="searchForm">
                     <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                         <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                             stroke-width="2" stroke="currentColor">
@@ -97,9 +109,17 @@
                                 d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                         </svg>
                     </div>
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari kegiatan..."
-                        class="w-64 pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:border-[#3B5286] focus:ring focus:ring-[#3B5286] focus:ring-opacity-20 placeholder-gray-400 transition">
+                    <input type="text" name="search" x-model="searchQuery" placeholder="Cari kegiatan..."
+                        class="w-64 pl-10 pr-10 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:border-[#3B5286] focus:ring focus:ring-[#3B5286] focus:ring-opacity-20 placeholder-gray-400 transition">
                     
+                    {{-- Clear Button --}}
+                    <button type="button" x-show="searchQuery.length > 0" @click="searchQuery = ''; $nextTick(() => $refs.searchForm.submit())"
+                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition" x-cloak>
+                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+
                     @if(request('date')) <input type="hidden" name="date" value="{{ request('date') }}"> @endif
                     @if(request('month')) <input type="hidden" name="month" value="{{ request('month') }}"> @endif
                     @if(request('year')) <input type="hidden" name="year" value="{{ request('year') }}"> @endif
@@ -122,8 +142,8 @@
         {{-- Kunjungan Kerja --}}
         @if($routeName === 'kunjungan-kerja')
             {{-- Search Bar --}}
-            <div class="relative hidden sm:block">
-                <form action="{{ route('kunjungan-kerja') }}" method="GET">
+            <div class="relative hidden sm:block" x-data="{ searchQuery: '{{ request('search') }}' }">
+                <form action="{{ route('kunjungan-kerja') }}" method="GET" x-ref="searchForm">
                     <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                         <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                             stroke-width="2" stroke="currentColor">
@@ -131,8 +151,17 @@
                                 d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                         </svg>
                     </div>
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari kegiatan..."
-                        class="w-64 pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:border-[#3B5286] focus:ring focus:ring-[#3B5286] focus:ring-opacity-20 placeholder-gray-400 transition">
+                    <input type="text" name="search" x-model="searchQuery" placeholder="Cari kegiatan..."
+                        class="w-64 pl-10 pr-10 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:border-[#3B5286] focus:ring focus:ring-[#3B5286] focus:ring-opacity-20 placeholder-gray-400 transition">
+                    
+                    {{-- Clear Button --}}
+                    <button type="button" x-show="searchQuery.length > 0" @click="searchQuery = ''; $nextTick(() => $refs.searchForm.submit())"
+                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition" x-cloak>
+                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+
                     @if(request('date')) <input type="hidden" name="date" value="{{ request('date') }}"> @endif
                     @if(request('month')) <input type="hidden" name="month" value="{{ request('month') }}"> @endif
                     @if(request('year')) <input type="hidden" name="year" value="{{ request('year') }}"> @endif
@@ -155,8 +184,8 @@
         {{-- Administrasi Perjalanan Dinas --}}
         @if($routeName === 'administrasi-perjalanan-dinas')
             {{-- Search Bar --}}
-            <div class="relative hidden sm:block">
-                <form action="{{ route('administrasi-perjalanan-dinas') }}" method="GET">
+            <div class="relative hidden sm:block" x-data="{ searchQuery: '{{ request('search') }}' }">
+                <form action="{{ route('administrasi-perjalanan-dinas') }}" method="GET" x-ref="searchForm">
                     <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                         <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                             stroke-width="2" stroke="currentColor">
@@ -164,9 +193,17 @@
                                 d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                         </svg>
                     </div>
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari kegiatan..."
-                        class="w-64 pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:border-[#3B5286] focus:ring focus:ring-[#3B5286] focus:ring-opacity-20 placeholder-gray-400 transition">
+                    <input type="text" name="search" x-model="searchQuery" placeholder="Cari kegiatan..."
+                        class="w-64 pl-10 pr-10 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:border-[#3B5286] focus:ring focus:ring-[#3B5286] focus:ring-opacity-20 placeholder-gray-400 transition">
                     
+                    {{-- Clear Button --}}
+                    <button type="button" x-show="searchQuery.length > 0" @click="searchQuery = ''; $nextTick(() => $refs.searchForm.submit())"
+                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition" x-cloak>
+                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+
                     @if(request('date')) <input type="hidden" name="date" value="{{ request('date') }}"> @endif
                     @if(request('month')) <input type="hidden" name="month" value="{{ request('month') }}"> @endif
                     @if(request('year')) <input type="hidden" name="year" value="{{ request('year') }}"> @endif
@@ -184,6 +221,16 @@
                     Tambah Kegiatan
                 </a>
             @endif
+        @endif
+
+        {{-- Display Settings Back Button --}}
+        @if($routeName === 'management-user.display-settings')
+            <a href="{{ route('management-user.index') }}" class="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition bg-gray-50 px-3 py-2 rounded-lg border border-gray-100">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Kembali
+            </a>
         @endif
 
     </div>

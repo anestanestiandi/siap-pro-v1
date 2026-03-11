@@ -20,8 +20,10 @@
 /* Samakan ukuran placeholder input */
 input::placeholder {
     font-size: 14px;
-    color: #9CA3AF; /* abu-abu biar elegan */
+    color: #9CA3AF;
+    /* abu-abu biar elegan */
 }
+
 /* Custom Scrollbar Styles */
 .custom-scrollbar::-webkit-scrollbar {
     height: 8px;
@@ -57,4 +59,23 @@ input::placeholder {
 
 .custom-scrollbar-y::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
+}
+
+/* Tom Select Multi-Select Constraint */
+.ts-wrapper.multi .ts-control {
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.ts-wrapper.multi .ts-control::-webkit-scrollbar {
+    width: 6px;
+}
+
+.ts-wrapper.multi .ts-control::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 4px;
+}
+
+.ts-wrapper.multi .ts-control::-webkit-scrollbar-track {
+    background-color: transparent;
 }

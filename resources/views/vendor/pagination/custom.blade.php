@@ -31,20 +31,20 @@
             <p class="text-xs text-gray-400">
                 Menampilkan
                 @if ($paginator->firstItem())
-                    <span>{{ $paginator->firstItem() }}</span>
+                    <span class="font-medium">{{ $paginator->firstItem() }}</span>
                     sampai
-                    <span>{{ $paginator->lastItem() }}</span>
+                    <span class="font-medium">{{ $paginator->lastItem() }}</span>
                 @else
                     {{ $paginator->count() }}
                 @endif
                 dari
-                <span>{{ $paginator->total() }}</span>
+                <span class="font-medium">{{ $paginator->total() }}</span>
                 hasil
             </p>
         </div>
 
         <div>
-            <span class="relative z-0 inline-flex rounded-md gap-2">
+            <span class="relative z-0 inline-flex rounded-md gap-1">
                 {{-- Previous Page Link --}}
                 @if ($paginator->onFirstPage())
                     <span aria-disabled="true" aria-label="{{ __('pagination.previous') }}">
@@ -53,7 +53,7 @@
                         </span>
                     </span>
                 @else
-                    <a href="{{ $paginator->previousPageUrl() }}" rel="prev" class="relative inline-flex items-center px-3 py-1 text-xs font-medium text-gray-500 bg-white border border-gray-200 rounded-md hover:bg-gray-50" aria-label="{{ __('pagination.previous') }}">
+                    <a href="{{ $paginator->previousPageUrl() }}" rel="prev" class="relative inline-flex items-center px-3 py-1 text-xs font-medium text-gray-500 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors" aria-label="{{ __('pagination.previous') }}">
                         &lt; Sebelumnya
                     </a>
                 @endif
@@ -63,7 +63,7 @@
                     {{-- "Three Dots" Separator --}}
                     @if (is_string($element))
                         <span aria-disabled="true">
-                            <span class="relative inline-flex items-center px-3 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-200 cursor-default rounded-md">{{ $element }}</span>
+                            <span class="relative inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-200 cursor-default rounded-md">{{ $element }}</span>
                         </span>
                     @endif
 
@@ -72,10 +72,10 @@
                         @foreach ($element as $page => $url)
                             @if ($page == $paginator->currentPage())
                                 <span aria-current="page">
-                                    <span class="relative inline-flex items-center px-3 py-1 text-xs font-medium text-white bg-[#3B5286] border border-[#3B5286] cursor-default rounded-md">{{ $page }}</span>
+                                    <span class="relative inline-flex items-center px-3 py-1 text-xs font-bold text-white bg-[#3B5286] border border-[#3B5286] cursor-default rounded-md shadow-sm">{{ $page }}</span>
                                 </span>
                             @else
-                                <a href="{{ $url }}" class="relative inline-flex items-center px-3 py-1 text-xs font-medium text-gray-500 bg-white border border-gray-200 rounded-md hover:bg-gray-50" aria-label="{{ __('Go to page :page', ['page' => $page]) }}">
+                                <a href="{{ $url }}" class="relative inline-flex items-center px-2 py-1 text-xs font-medium text-gray-500 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors" aria-label="{{ __('Go to page :page', ['page' => $page]) }}">
                                     {{ $page }}
                                 </a>
                             @endif
@@ -85,7 +85,7 @@
 
                 {{-- Next Page Link --}}
                 @if ($paginator->hasMorePages())
-                    <a href="{{ $paginator->nextPageUrl() }}" rel="next" class="relative inline-flex items-center px-3 py-1 text-xs font-medium text-gray-500 bg-white border border-gray-200 rounded-md hover:bg-gray-50" aria-label="{{ __('pagination.next') }}">
+                    <a href="{{ $paginator->nextPageUrl() }}" rel="next" class="relative inline-flex items-center px-3 py-1 text-xs font-medium text-gray-500 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors" aria-label="{{ __('pagination.next') }}">
                         Selanjutnya &gt;
                     </a>
                 @else

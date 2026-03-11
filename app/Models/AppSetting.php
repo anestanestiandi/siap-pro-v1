@@ -1,0 +1,39 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class AppSetting extends Model
+{
+    protected $table = 'app_settings';
+    
+    protected $fillable = [
+        'key',
+        'value'
+    ];
+    
+    protected $casts = [
+        'value' => 'array'
+    ];
+    
+    /**
+     * Get setting by key.
+     */
+    public static function get($key, $default = null)
+    {
+        $setting = self::where('key', $key)->first();
+        return $setting ? $setting->value : $default;
+    }
+    
+    /**
+     * Set setting by key.
+     */
+    public static function set($key, $value)
+    {
+        return self::updateOrCreate(
+            ['key' => $key],
+            ['value' => $value]
+        );
+    }
+}

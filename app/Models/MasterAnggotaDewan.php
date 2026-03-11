@@ -15,18 +15,5 @@ class MasterAnggotaDewan extends Model
         'is_active' => 'boolean',
     ];
 
-    public function persidangan()
-    {
-        return $this->belongsToMany(Persidangan::class, 'persidangan_anggota_dewan', 'id_anggota', 'id_persidangan');
-    }
-
-    public function pelayananKeprotokolan()
-    {
-        return $this->belongsToMany(PelayananKeprotokolan::class, 'pelayanan_anggota_dewan', 'id_anggota', 'id_pelayanan');
-    }
-
-    public function kunjunganKerja()
-    {
-        return $this->belongsToMany(KunjunganKerja::class, 'kunjungan_peserta', 'id_anggota', 'id_kunjungan');
-    }
+    // Pivot relationships removed as per request to use module-specific JSON columns.
 }

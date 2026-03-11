@@ -18,7 +18,7 @@ class PersidanganController extends Controller
     public function index(Request $request)
     {
         // 1. Initial Query
-        $query = Persidangan::with(['anggotaDewan', 'jenisPersidangan']);
+        $query = Persidangan::with(['jenisPersidangan']);
 
         // 2. Define Filter Logic (Closure for reusability)
         $applyFilter = function ($q) use ($request) {
@@ -42,12 +42,25 @@ class PersidanganController extends Controller
                 $q->where(function ($sub) use ($search) {
                     $sub->where('nama_persidangan', 'like', "%{$search}%")
                         ->orWhere('tempat', 'like', "%{$search}%")
-                        ->orWhereHas('anggotaDewan', function ($q) use ($search) {
-                            $q->where('nama', 'like', "%{$search}%");
-                        })
                         ->orWhereHas('jenisPersidangan', function ($q) use ($search) {
                             $q->where('nama_jenis', 'like', "%{$search}%");
                         });
+
+                    // Search names in JSON field id_anggota
+                    $matchingAnggotaIds = MasterAnggotaDewan::where('nama', 'like', "%{$search}%")
+                        ->pluck('id_anggota')->toArray();
+                    foreach ($matchingAnggotaIds as $id) {
+                        $sub->orWhereJsonContains('id_anggota', (string)$id)
+                            ->orWhereJsonContains('id_anggota', (int)$id);
+                    }
+
+                    // Search names in JSON field id_petugas
+                    $matchingPetugasIds = MasterPetugasProtokol::where('nama', 'like', "%{$search}%")
+                        ->pluck('id_petugas')->toArray();
+                    foreach ($matchingPetugasIds as $id) {
+                        $sub->orWhereJsonContains('id_petugas', (string)$id)
+                            ->orWhereJsonContains('id_petugas', (int)$id);
+                    }
                 });
             }
         };
@@ -96,7 +109,7 @@ class PersidanganController extends Controller
         $totalProtokol = MasterPetugasProtokol::count();
 
         // 4. Sorting
-        $query->orderBy('created_at', 'desc');
+        $query->orderBy('tanggal_persidangan', 'desc')->orderBy('waktu', 'desc');
 
         // 5. Export PDF (Optional, derived from existing controller logic)
         // 5. Export Logic
@@ -125,7 +138,7 @@ class PersidanganController extends Controller
         }
 
         // 6. Pagination
-        $kegiatan = $query->paginate(10)->withQueryString();
+        $kegiatan = $query->paginate(10)->onEachSide(1)->withQueryString();
 
         return view('persidangan.index', compact(
             'kegiatan',
@@ -167,7 +180,7 @@ class PersidanganController extends Controller
             'id_jenis_persidangan' => 'required|integer|exists:master_jenis_persidangan,id_jenis_persidangan',
             'tempat' => 'nullable|string|max:255',
             'nama_persidangan' => 'required|string|max:255',
-            'file' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
+            'file' => 'nullable|file|mimes:pdf,doc,docx,jpeg,jpg,png,xls,xlsx|max:10240',
         ];
 
         $validated = $request->validate($rules);
@@ -178,12 +191,9 @@ class PersidanganController extends Controller
             $filePath = $request->file('file')->store('persidangan', 'public');
         }
 
-        // Insert data persidangan
-        // Note: 'id_anggota' column is kept for backward compatibility if needed, 
-        // passing the first selected member or null. Ideally should be nullable.
         $persidangan = Persidangan::create([
-            'id_anggota' => $validated['anggota_dewan_id'][0] ?? null, 
-            'id_petugas' => $validated['petugas_id'][0] ?? null,
+            'id_anggota' => $validated['anggota_dewan_id'], // Simpan sebagai array JSON
+            'id_petugas' => $validated['petugas_id'] ?? [], // Simpan sebagai array JSON
             'id_jenis_persidangan' => $validated['id_jenis_persidangan'],
             'nama_persidangan' => $validated['nama_persidangan'],
             'tanggal_persidangan' => $validated['tanggal_persidangan'],
@@ -192,15 +202,6 @@ class PersidanganController extends Controller
             'file_path' => $filePath,
             'created_by' => Auth::user()->id_user ?? Auth::id(), // Handle if id_user property usage varies
         ]);
-
-        // Sync relationships
-        if (!empty($validated['anggota_dewan_id'])) {
-            $persidangan->anggotaDewan()->sync($validated['anggota_dewan_id']);
-        }
-        
-        if (!empty($validated['petugas_id'])) {
-            $persidangan->petugas()->sync($validated['petugas_id']);
-        }
 
         return redirect()->route('persidangan')
             ->with('success', 'Kegiatan persidangan berhasil ditambahkan.');
@@ -211,7 +212,7 @@ class PersidanganController extends Controller
      */
     public function show($id)
     {
-        $item = Persidangan::with(['anggotaDewan', 'jenisPersidangan', 'creator', 'updater', 'historyLogs', 'historyLogs.user'])
+        $item = Persidangan::with(['jenisPersidangan', 'creator', 'updater', 'historyLogs', 'historyLogs.user'])
             ->findOrFail($id);
 
         return view('persidangan.show', compact('item'));
@@ -222,7 +223,7 @@ class PersidanganController extends Controller
      */
     public function edit($id)
     {
-        $item = Persidangan::with(['anggotaDewan', 'petugas'])->findOrFail($id);
+        $item = Persidangan::findOrFail($id);
         $anggotaDewan = MasterAnggotaDewan::where('is_active', 1)->orderBy('nama')->get();
         $jenisPersidangan = MasterJenisPersidangan::where('is_active', 1)->orderBy('nama_jenis')->get();
         $petugasProtokol = MasterPetugasProtokol::where('is_active', 1)->orderBy('nama')->get();
@@ -247,7 +248,7 @@ class PersidanganController extends Controller
             'id_jenis_persidangan' => 'required|integer|exists:master_jenis_persidangan,id_jenis_persidangan',
             'tempat' => 'nullable|string|max:255',
             'nama_persidangan' => 'required|string|max:255',
-            'file' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
+            'file' => 'nullable|file|mimes:pdf,doc,docx,jpeg,jpg,png,xls,xlsx|max:10240',
         ];
 
         $validated = $request->validate($rules);
@@ -260,25 +261,22 @@ class PersidanganController extends Controller
             $persidangan->file_path = $request->file('file')->store('persidangan', 'public');
         }
 
-        $persidangan->update([
-            'id_anggota' => $validated['anggota_dewan_id'][0] ?? $persidangan->id_anggota,
-            'id_petugas' => $validated['petugas_id'][0] ?? $persidangan->id_petugas,
+        $updateData = [
+            'id_anggota' => $validated['anggota_dewan_id'], // Update sebagai array JSON
             'id_jenis_persidangan' => $validated['id_jenis_persidangan'],
             'nama_persidangan' => $validated['nama_persidangan'],
             'tanggal_persidangan' => $validated['tanggal_persidangan'],
             'waktu' => $validated['waktu'],
             'tempat' => $validated['tempat'] ?? null,
             'updated_by' => Auth::id(),
-        ]);
-        
-        // Sync relationships
-        if (isset($validated['anggota_dewan_id'])) {
-            $persidangan->anggotaDewan()->sync($validated['anggota_dewan_id']);
+        ];
+
+        // Only update petugas if user is super admin (since field is hidden for others)
+        if (auth()->user()->isSuperAdmin()) {
+            $updateData['id_petugas'] = $validated['petugas_id'] ?? [];
         }
-        
-        if (isset($validated['petugas_id'])) {
-            $persidangan->petugas()->sync($validated['petugas_id']);
-        }
+
+        $persidangan->update($updateData);
 
         return redirect()->route('persidangan')
             ->with('success', 'Kegiatan persidangan berhasil diperbarui.');
@@ -301,4 +299,5 @@ class PersidanganController extends Controller
         return redirect()->route('persidangan')
             ->with('success', 'Kegiatan persidangan berhasil dihapus.');
     }
+
 }

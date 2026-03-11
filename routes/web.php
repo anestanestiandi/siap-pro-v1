@@ -30,7 +30,7 @@ Route::middleware('auth')->group(function () {
         'update' => 'pelayanan-keprotokolan.update',
         'destroy' => 'pelayanan-keprotokolan.destroy',
     ]);
-
+    
     // Persidangan
     Route::resource('persidangan', \App\Http\Controllers\PersidanganController::class)->names([
         'index' => 'persidangan',
@@ -41,7 +41,7 @@ Route::middleware('auth')->group(function () {
         'update' => 'persidangan.update',
         'destroy' => 'persidangan.destroy',
     ]);
-
+    
     // Kunjungan Kerja
     Route::resource('kunjungan-kerja', \App\Http\Controllers\KunjunganKerjaController::class)->names([
         'index' => 'kunjungan-kerja',
@@ -53,8 +53,7 @@ Route::middleware('auth')->group(function () {
         'destroy' => 'kunjungan-kerja.destroy',
     ]);
 
-    // Administrasi Perjalanan Dinas
-    // Administrasi Perjalanan Dinas
+       // Administrasi Perjalanan Dinas
     Route::resource('administrasi-perjalanan-dinas', \App\Http\Controllers\AdmPerjalananDinasController::class)->names([
         'index' => 'administrasi-perjalanan-dinas',
         'create' => 'administrasi-perjalanan-dinas.create',

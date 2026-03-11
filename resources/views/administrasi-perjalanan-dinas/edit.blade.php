@@ -112,7 +112,7 @@
                                 <svg class="w-4 h-4 text-[#3B5286]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                                 Petugas Protokol
                             </label>
-                            <select id="petugas" name="petugas_id[]" multiple class="w-full border-gray-300 rounded-lg shadow-sm focus:border-[#3B5286] focus:ring focus:ring-[#3B5286] focus:ring-opacity-50 h-10" placeholder="Pilih petugas protokol..." autocomplete="off">
+                            <select id="petugas" name="petugas_id[]" multiple class="w-full border-gray-300 rounded-lg shadow-sm focus:border-[#3B5286] focus:ring focus:ring-[#3B5286] focus:ring-opacity-50 min-h-[40px]" placeholder="Pilih petugas protokol..." autocomplete="off">
                                 <option value="">Pilih petugas protokol...</option>
                                 @foreach($petugasProtokol as $petugas)
                                     <option value="{{ $petugas->id_petugas }}" {{ in_array($petugas->id_petugas, old('petugas_id', $item->petugas->pluck('id_petugas')->toArray())) ? 'selected' : '' }}>{{ $petugas->nama }}</option>
@@ -154,14 +154,26 @@
                                 <svg class="w-4 h-4 text-[#3B5286]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                                 Pelaksana
                             </label>
-                            <select id="pelaksana" name="pelaksana[]" multiple class="w-full border-gray-300 rounded-lg shadow-sm focus:border-[#3B5286] focus:ring focus:ring-[#3B5286] focus:ring-opacity-50 h-10" placeholder="Pilih pelaksana..." autocomplete="off">
+                            <select id="pelaksana" name="pelaksana[]" multiple class="w-full border-gray-300 rounded-lg shadow-sm focus:border-[#3B5286] focus:ring focus:ring-[#3B5286] focus:ring-opacity-50 min-h-[40px]" placeholder="Pilih pelaksana..." autocomplete="off">
                                 <option value="">Pilih pelaksana...</option>
+                                @php
+                                    $masterPegawaiNames = $masterPegawai->pluck('nama_lengkap')->toArray();
+                                    $allPelaksana = old('pelaksana', $selectedPelaksana);
+                                @endphp
+                                
+                                {{-- Master Pegawai Options --}}
                                 @foreach($masterPegawai as $pegawai)
-                                    <option value="{{ $pegawai->nama_lengkap }}" {{ in_array($pegawai->nama_lengkap, old('pelaksana', $selectedPelaksana)) ? 'selected' : '' }}>
+                                    <option value="{{ $pegawai->nama_lengkap }}" {{ in_array($pegawai->nama_lengkap, $allPelaksana) ? 'selected' : '' }}>
                                         {{ $pegawai->nama_lengkap }}
                                     </option>
                                 @endforeach
 
+                                {{-- Custom Names Options --}}
+                                @foreach($allPelaksana as $name)
+                                    @if(!in_array($name, $masterPegawaiNames))
+                                        <option value="{{ $name }}" selected>{{ $name }}</option>
+                                    @endif
+                                @endforeach
                             </select>
                             @error('pelaksana')
                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -177,7 +189,7 @@
                             Update File
                         </label>
                         <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 hover:bg-gray-100 transition cursor-pointer relative">
-                            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-400 text-white mb-3">
+                            <div id="file-icon" class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-400 text-white mb-3 transition-colors duration-200">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                             </div>
                             <p id="file-name" class="text-sm text-gray-600">
@@ -188,8 +200,8 @@
                                     Drag & drop file di sini atau <span class="text-blue-500 font-medium">klik untuk browse</span>
                                 @endif
                             </p>
-                            <p class="text-xs text-gray-400 mt-1">PDF, DOC, DOCX (Max. 10MB)</p>
-                            <input type="file" id="file-upload" name="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                            <p class="text-xs text-gray-400 mt-1">PDF, DOC, DOCX, JPEG, JPG, PNG, XLS, XLSX (Max. 10MB)</p>
+                            <input type="file" id="file-upload" name="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".pdf,.doc,.docx,.jpeg,.jpg,.png,.xls,.xlsx">
                         </div>
                         @error('file')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -290,6 +302,18 @@
                 persist: false
             };
 
+            // Pelaksana Select Settings (Allowing custom input)
+            var pelaksanaSelectSettings = {
+                plugins: ['remove_button'],
+                create: true,
+                sortField: {
+                    field: "text",
+                    direction: "asc"
+                },
+                maxItems: null,
+                persist: false
+            };
+
             // Single Select Settings
             var singleSelectSettings = {
                 create: false,
@@ -306,24 +330,36 @@
             @if(auth()->user()->isSuperAdmin())
             new TomSelect('#petugas', multiSelectSettings);
             @endif
-            new TomSelect('#pelaksana', multiSelectSettings);
+            new TomSelect('#pelaksana', pelaksanaSelectSettings);
             new TomSelect('#tujuan_provinsi', singleSelectSettings);
 
 
             // File Upload Preview
             const fileInput = document.getElementById('file-upload');
             const fileNameDisplay = document.getElementById('file-name');
+            const fileIcon = document.getElementById('file-icon');
             
-            if(fileInput && fileNameDisplay) {
+            if(fileInput && fileNameDisplay && fileIcon) {
                 fileInput.addEventListener('change', function(e) {
                     const file = e.target.files[0];
                     if (file) {
                         fileNameDisplay.innerHTML = `<span class="font-medium text-[#3B5286]">${file.name}</span> <span class="text-xs text-gray-500">(${(file.size/1024).toFixed(1)} KB)</span>`;
+                        
+                        const fileExt = file.name.split('.').pop().toLowerCase();
+                        let iconColorClass = 'bg-gray-400';
+                        if (['pdf'].includes(fileExt)) iconColorClass = 'bg-red-500';
+                        else if (['doc', 'docx'].includes(fileExt)) iconColorClass = 'bg-blue-500';
+                        else if (['xls', 'xlsx'].includes(fileExt)) iconColorClass = 'bg-green-500';
+                        else if (['png', 'jpg', 'jpeg'].includes(fileExt)) iconColorClass = 'bg-yellow-500';
+                        
+                        fileIcon.className = `inline-flex items-center justify-center w-12 h-12 rounded-full text-white mb-3 transition-colors duration-200 ${iconColorClass}`;
                     } else {
                         @if($item->file_path)
                             fileNameDisplay.innerHTML = 'File saat ini: <span class="font-medium text-[#3B5286]">{{ basename($item->file_path) }}</span><br><span class="text-xs text-gray-400">Drag & drop file baru untuk mengganti</span>';
+                            fileIcon.className = 'inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-400 text-white mb-3 transition-colors duration-200';
                         @else
                             fileNameDisplay.innerHTML = 'Drag & drop file di sini atau <span class="text-blue-500 font-medium">klik untuk browse</span>';
+                            fileIcon.className = 'inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-400 text-white mb-3 transition-colors duration-200';
                         @endif
                     }
                 });

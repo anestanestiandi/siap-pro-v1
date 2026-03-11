@@ -24,6 +24,8 @@ class Persidangan extends Model
 
     protected $casts = [
         'tanggal_persidangan' => 'date',
+        'id_anggota' => 'array',
+        'id_petugas' => 'array',
     ];
 
     public function jenisPersidangan()
@@ -31,21 +33,16 @@ class Persidangan extends Model
         return $this->belongsTo(MasterJenisPersidangan::class, 'id_jenis_persidangan', 'id_jenis_persidangan');
     }
 
-    public function petugasProtokol()
+    public function getAnggotaDewanAttribute()
     {
-        return $this->belongsTo(MasterPetugasProtokol::class, 'id_petugas', 'id_petugas');
+        $ids = is_string($this->id_anggota) ? json_decode($this->id_anggota) : $this->id_anggota;
+        return MasterAnggotaDewan::whereIn('id_anggota', (array)($ids ?: []))->get();
     }
 
-    public function anggotaDewan()
+    public function getPetugasAttribute()
     {
-        return $this->belongsToMany(MasterAnggotaDewan::class, 'persidangan_anggota_dewan', 'id_persidangan', 'id_anggota')
-                    ->withTimestamps();
-    }
-
-    public function petugas()
-    {
-        return $this->belongsToMany(MasterPetugasProtokol::class, 'persidangan_petugas', 'id_persidangan', 'id_petugas')
-                    ->withTimestamps();
+        $ids = is_string($this->id_petugas) ? json_decode($this->id_petugas) : $this->id_petugas;
+        return MasterPetugasProtokol::whereIn('id_petugas', (array)($ids ?: []))->get();
     }
 
     public function creator()

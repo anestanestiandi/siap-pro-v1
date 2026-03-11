@@ -13,6 +13,8 @@ class KunjunganKerja extends Model
     protected $casts = [
         'tanggal_kunjungan' => 'date',
         'rombongan' => 'array',
+        'id_anggota' => 'array',
+        'id_petugas' => 'array',
     ];
 
     public function jenisKunjungan()
@@ -20,17 +22,16 @@ class KunjunganKerja extends Model
         return $this->belongsTo(MasterJenisKunjungan::class, 'id_jenis_kunjungan', 'id_jenis_kunjungan');
     }
 
-    public function anggotaDewan()
+    public function getAnggotaDewanAttribute()
     {
-        return $this->belongsToMany(MasterAnggotaDewan::class, 'kunjungan_peserta', 'id_kunjungan', 'id_anggota')
-                    ->withTimestamps();
+        $ids = is_string($this->id_anggota) ? json_decode($this->id_anggota) : $this->id_anggota;
+        return MasterAnggotaDewan::whereIn('id_anggota', (array)($ids ?: []))->get();
     }
 
-    public function petugas()
+    public function getPetugasAttribute()
     {
-        return $this->belongsToMany(MasterPetugasProtokol::class, 'kunjungan_petugas', 'id_kunjungan', 'id_petugas')
-                    ->withPivot('peran')
-                    ->withTimestamps();
+        $ids = is_string($this->id_petugas) ? json_decode($this->id_petugas) : $this->id_petugas;
+        return MasterPetugasProtokol::whereIn('id_petugas', (array)($ids ?: []))->get();
     }
 
     public function singlePetugas()

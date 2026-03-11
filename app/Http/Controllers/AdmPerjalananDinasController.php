@@ -16,7 +16,7 @@ class AdmPerjalananDinasController extends Controller
         $query = \App\Models\AdministrasiPerjalananDinas::query();
         
         // Eager load relationships
-        $query->with(['petugas', 'jenisPerjalananDinas', 'creator', 'updater']);
+        $query->with(['jenisPerjalananDinas', 'creator', 'updater']);
 
         // Define Filter Logic
         $applyFilter = function ($q) use ($request) {
@@ -46,6 +46,9 @@ class AdmPerjalananDinasController extends Controller
                         ->orWhere('pelaksana', 'like', "%{$search}%")
                         ->orWhereHas('jenisPerjalananDinas', function ($q) use ($search) {
                             $q->where('nama_jenis', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('petugas', function ($q) use ($search) {
+                            $q->where('nama', 'like', "%{$search}%");
                         });
                 });
             }
@@ -85,7 +88,7 @@ class AdmPerjalananDinasController extends Controller
         $totalProtokol = \App\Models\MasterPetugasProtokol::count();
 
         // Sorting
-        $query->orderBy('created_at', 'desc');
+        $query->orderBy('tanggal_mulai', 'desc')->orderBy('waktu', 'desc');
 
         // Export Logic
         if ($request->has('export')) {
@@ -113,7 +116,7 @@ class AdmPerjalananDinasController extends Controller
         }
         // If export requested...
 
-        $kegiatan = $query->paginate(10)->withQueryString();
+        $kegiatan = $query->paginate(10)->onEachSide(1)->withQueryString();
 
         return view('administrasi-perjalanan-dinas.index', compact('kegiatan', 'totalKegiatan', 'jenisPerjalananSummary', 'totalProtokol'));
     }
@@ -157,7 +160,7 @@ class AdmPerjalananDinasController extends Controller
             'tujuan' => 'required|string',
             'petugas_id' => 'nullable|array',
             'petugas_id.*' => 'exists:master_petugas_protokol,id_petugas',
-            'file' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
+            'file' => 'nullable|file|mimes:pdf,doc,docx,jpeg,jpg,png,xls,xlsx|max:10240',
         ]);
 
 
@@ -176,7 +179,7 @@ class AdmPerjalananDinasController extends Controller
             'tanggal_mulai' => $tanggalMulai,
             'tanggal_selesai' => $tanggalSelesai,
             'id_jenis_perjalanan_dinas' => $request->id_jenis_perjalanan_dinas,
-            'id_petugas' => $request->petugas_id[0] ?? null,
+            'id_petugas' => $request->petugas_id ?? [],
             'tujuan' => $request->tujuan,
             'pelaksana' => implode('; ', $request->pelaksana),
             'waktu' => '09:00', // Default time
@@ -186,10 +189,6 @@ class AdmPerjalananDinasController extends Controller
             'updated_by' => \Illuminate\Support\Facades\Auth::id(),
         ]);
 
-        if ($request->has('petugas_id')) {
-            $adm->petugas()->sync($request->petugas_id);
-        }
-
         return redirect()->route('administrasi-perjalanan-dinas')
             ->with('success', 'Kegiatan perjalanan dinas berhasil ditambahkan.');
     }
@@ -198,7 +197,7 @@ class AdmPerjalananDinasController extends Controller
      */
     public function show($id)
     {
-        $item = \App\Models\AdministrasiPerjalananDinas::with(['petugas', 'jenisPerjalananDinas', 'creator', 'updater', 'historyLogs', 'historyLogs.user'])->findOrFail($id);
+        $item = \App\Models\AdministrasiPerjalananDinas::with(['jenisPerjalananDinas', 'creator', 'updater', 'historyLogs', 'historyLogs.user'])->findOrFail($id);
         
         return view('administrasi-perjalanan-dinas.show', compact('item'));
     }
@@ -208,7 +207,7 @@ class AdmPerjalananDinasController extends Controller
      */
     public function edit($id)
     {
-        $item = \App\Models\AdministrasiPerjalananDinas::with('petugas')->findOrFail($id);
+        $item = \App\Models\AdministrasiPerjalananDinas::findOrFail($id);
         
         // Eager load related data for dropdowns
         $jenisPerjalanan = \Illuminate\Support\Facades\DB::table('master_jenis_perjalanan_dinas')->get();
@@ -241,7 +240,7 @@ class AdmPerjalananDinasController extends Controller
             'tujuan' => 'required|string',
             'petugas_id' => 'nullable|array',
             'petugas_id.*' => 'exists:master_petugas_protokol,id_petugas',
-            'file' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
+            'file' => 'nullable|file|mimes:pdf,doc,docx,jpeg,jpg,png,xls,xlsx|max:10240',
         ]);
 
 
@@ -255,12 +254,15 @@ class AdmPerjalananDinasController extends Controller
             'tanggal_mulai' => $tanggalMulai,
             'tanggal_selesai' => $tanggalSelesai,
             'id_jenis_perjalanan_dinas' => $request->id_jenis_perjalanan_dinas,
-            'id_petugas' => $request->petugas_id[0] ?? $item->id_petugas,
             'tujuan' => $request->tujuan,
             'pelaksana' => implode('; ', $request->pelaksana),
             'updated_by' => \Illuminate\Support\Facades\Auth::id(),
-
         ];
+
+        // Only update petugas if user is super admin (since field is hidden for others)
+        if (auth()->user()->isSuperAdmin()) {
+            $data['id_petugas'] = $request->petugas_id ?? [];
+        }
 
         if ($request->hasFile('file')) {
             // Delete old file if exists
@@ -271,13 +273,6 @@ class AdmPerjalananDinasController extends Controller
         }
 
         $item->update($data);
-
-        // Sync Petugas
-        if ($request->has('petugas_id')) {
-            $item->petugas()->sync($request->petugas_id);
-        } else {
-            $item->petugas()->detach();
-        }
 
         return redirect()->route('administrasi-perjalanan-dinas')
             ->with('success', 'Kegiatan perjalanan dinas berhasil diperbarui.');

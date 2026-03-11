@@ -1,3 +1,11 @@
+@php
+    $visibleColumns = [
+        'eksternal' => ['file' => false, 'last_update' => false],
+        'admin' => ['file' => true, 'last_update' => true],
+        'super_admin' => ['file' => true, 'last_update' => true]
+    ][auth()->user()->role] ?? ['file' => true, 'last_update' => true];
+@endphp
+
 <x-app-layout>
 
     {{-- Full Page Wrapper --}}
@@ -139,11 +147,7 @@
                 <div
                     class="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div class="flex items-center gap-3">
-                        <h2 class="text-base font-bold text-gray-900">Administrasi Perjalanan Dinas</h2>
-                        <span
-                            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#3B5286] text-white">
-                            {{ now()->isoFormat('dddd, D MMMM Y') }}
-                        </span>
+                        <h2 class="text-base font-bold text-gray-900">Daftar Kegiatan Administrasi Perjalanan Dinas</h2>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2">
@@ -445,12 +449,17 @@
                                 </th>
                                 <th class="px-3 py-3 text-xs font-semibold text-gray-500 uppercase text-left w-[12%]">Jenis
                                 </th>
-                                <th class="px-3 py-3 text-xs font-semibold text-gray-500 uppercase text-center">File
-                                </th>
-                                <th class="px-3 py-3 text-xs font-semibold text-gray-500 uppercase text-left">
-                                    Last
-                                    Update
-                                </th>
+                                @if($visibleColumns['file'] || $visibleColumns['last_update'])
+                                    @if($visibleColumns['file'])
+                                    <th class="px-3 py-3 text-xs font-medium text-gray-500 uppercase text-center">File
+                                    </th>
+                                    @endif
+                                    @if($visibleColumns['last_update'])
+                                    <th class="px-3 py-3 text-xs font-medium text-gray-500 uppercase text-left">
+                                        Last Update
+                                    </th>
+                                    @endif
+                                @endif
                             </tr>
                         </thead>
                         <tbody x-show="loading" x-cloak class="animate-pulse">
@@ -488,15 +497,21 @@
                                     <td class="px-3 py-4">
                                         <div class="h-6 bg-gray-200 rounded-lg w-20"></div>
                                     </td>
-                                    {{-- File --}}
-                                    <td class="px-3 py-4 text-center">
-                                        <div class="h-5 w-5 bg-gray-200 rounded mx-auto"></div>
-                                    </td>
-                                    {{-- Update --}}
-                                    <td class="pl-3 pr-6 py-4">
-                                        <div class="h-4 bg-gray-200 rounded w-24 mb-1"></div>
-                                        <div class="h-3 bg-gray-100 rounded w-12"></div>
-                                    </td>
+                                    @if($visibleColumns['file'] || $visibleColumns['last_update'])
+                                        @if($visibleColumns['file'])
+                                        {{-- File --}}
+                                        <td class="px-3 py-4 text-center">
+                                            <div class="h-5 w-5 bg-gray-200 rounded mx-auto"></div>
+                                        </td>
+                                        @endif
+                                        @if($visibleColumns['last_update'])
+                                        {{-- Update --}}
+                                        <td class="pl-3 pr-6 py-4">
+                                            <div class="h-4 bg-gray-200 rounded w-24 mb-1"></div>
+                                            <div class="h-3 bg-gray-100 rounded w-12"></div>
+                                        </td>
+                                        @endif
+                                    @endif
                                 </tr>
                             @endfor
                         </tbody>
@@ -531,7 +546,7 @@
                                     {{-- Pukul --}}
                                     <td class="px-3 py-4 text-center">
                                         <span
-                                            class="inline-block px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100 text-center min-w-[60px]">
+                                            class="inline-block px-3 py-1 rounded-full text-xs font-medium {{ $hasBg ? $chipClass . ' border' : $chipClass }} text-center min-w-[60px]">
                                             {{ $item->waktu ? \Carbon\Carbon::parse($item->waktu)->format('H:i') : '-' }}
                                         </span>
                                     </td>
@@ -577,9 +592,7 @@
 
                                     {{-- Nama Kegiatan --}}
                                     <td class="px-3 py-4 text-left">
-                                        <div>
-                                            <p class="font-semibold text-gray-900">{{ $item->nama_kegiatan }}</p>
-                                        </div>
+                                        <p class="font-semibold text-gray-900 line-clamp-3" title="{{ $item->nama_kegiatan }}">{{ $item->nama_kegiatan }}</p>
                                     </td>
 
                                     {{-- Tujuan --}}
@@ -627,107 +640,120 @@
                                         </span>
                                     </td>
 
-                                    {{-- File --}}
-                                    <td class="px-3 py-4 text-center">
-                                        @if($item->file_path)
-                                            <a href="{{ Storage::url($item->file_path) }}" target="_blank"
-                                                class="inline-flex items-center justify-center text-blue-600 hover:text-blue-800 transition">
-                                                <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                                    viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                                                </svg>
-                                            </a>
-                                        @else
-                                            <span class="text-gray-400">-</span>
-                                        @endif
-                                    </td>
-
-                                    {{-- Last Update & Actions --}}
-                                    <td class="px-3 py-4">
-                                        <div class="flex items-center justify-between gap-4">
-                                            <div class="text-left">
-                                                <p class="text-sm font-semibold text-gray-900">
-                                                    {{ $item->updater->nama_lengkap ?? $item->creator->nama_lengkap ?? 'System' }}
-                                                </p>
-                                                <p class="text-xs text-gray-500">
-                                                    {{ $item->updated_at ? $item->updated_at->diffForHumans() : $item->created_at->diffForHumans() }}
-                                                </p>
-                                            </div>
-
-                                            {{-- Action Dropdown --}}
-                                            <div x-data="{ open: false, top: 0, left: 0 }" class="relative">
-                                                <button
-                                                    @click="open = !open; $nextTick(() => { const rect = $el.getBoundingClientRect(); top = rect.bottom; left = rect.right - 160; })"
-                                                    @click.away="open = false"
-                                                    class="text-gray-400 hover:text-gray-600 transition p-1.5 hover:bg-gray-100 rounded-full focus:outline-none">
+                                    @if($visibleColumns['file'] || $visibleColumns['last_update'])
+                                        @if($visibleColumns['file'])
+                                        {{-- File --}}
+                                        <td class="px-3 py-4 text-center">
+                                            @if($item->file_path)
+                                                @php
+                                                    $ext = strtolower(pathinfo($item->file_path, PATHINFO_EXTENSION));
+                                                    $iconColorClass = 'text-blue-600 hover:text-blue-800'; // Default doc/docx and general
+                                                    if (in_array($ext, ['pdf'])) $iconColorClass = 'text-red-500 hover:text-red-700';
+                                                    elseif (in_array($ext, ['xls', 'xlsx'])) $iconColorClass = 'text-green-500 hover:text-green-700';
+                                                    elseif (in_array($ext, ['png', 'jpg', 'jpeg'])) $iconColorClass = 'text-yellow-500 hover:text-yellow-700';
+                                                @endphp
+                                                <a href="{{ Storage::disk('public')->url($item->file_path) }}" target="_blank"
+                                                    class="inline-flex items-center justify-center {{ $iconColorClass }} transition">
                                                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none"
                                                         viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round"
-                                                            d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
+                                                            d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                                                     </svg>
-                                                </button>
+                                                </a>
+                                            @else
+                                                <span class="text-gray-400">-</span>
+                                            @endif
+                                        </td>
+                                        @endif
 
-                                                {{-- Dropdown Menu (Teleported) --}}
-                                                <template x-teleport="body">
-                                                    <div x-show="open" x-transition:enter="transition ease-out duration-100"
-                                                        x-transition:enter-start="transform opacity-0 scale-95"
-                                                        x-transition:enter-end="transform opacity-100 scale-100"
-                                                        x-transition:leave="transition ease-in duration-75"
-                                                        x-transition:leave-start="transform opacity-100 scale-100"
-                                                        x-transition:leave-end="transform opacity-0 scale-95"
-                                                        class="fixed w-40 bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-gray-100 z-[9999] py-1"
-                                                        :style="`top: ${top}px; left: ${left}px`" style="display: none;">
+                                        @if($visibleColumns['last_update'])
+                                        {{-- Last Update & Actions --}}
+                                        <td class="px-3 py-4">
+                                            <div class="flex items-center justify-between gap-4">
+                                                <div class="text-left">
+                                                    <p class="text-sm font-semibold text-gray-900">
+                                                        {{ $item->updater->nama_lengkap ?? $item->creator->nama_lengkap ?? 'System' }}
+                                                    </p>
+                                                    <p class="text-xs text-gray-500">
+                                                        {{ $item->updated_at ? $item->updated_at->diffForHumans() : $item->created_at->diffForHumans() }}
+                                                    </p>
+                                                </div>
 
-                                                        {{-- View --}}
-                                                        <a href="{{ route('administrasi-perjalanan-dinas.show', $item->id_adm_perjalanan_dinas) }}"
-                                                            class="flex items-center justify-between px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-                                                            <span class="font-medium">View</span>
-                                                            <svg class="w-5 h-5 text-blue-500/70" fill="none"
-                                                                stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                                    stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                                    stroke-width="2"
-                                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                            </svg>
-                                                        </a>
+                                                {{-- Action Dropdown --}}
+                                                <div x-data="{ open: false, top: 0, left: 0 }" class="relative">
+                                                    <button
+                                                        @click="open = !open; $nextTick(() => { const rect = $el.getBoundingClientRect(); top = rect.bottom; left = rect.right - 160; })"
+                                                        @click.away="open = false"
+                                                        class="text-gray-400 hover:text-gray-600 transition p-1.5 hover:bg-gray-100 rounded-full focus:outline-none">
+                                                        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                                            viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
+                                                        </svg>
+                                                    </button>
 
-                                                        @if(auth()->user()->canManageData())
-                                                        {{-- Edit --}}
-                                                        <a href="{{ route('administrasi-perjalanan-dinas.edit', $item->id_adm_perjalanan_dinas) }}"
-                                                            class="flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 bg-gray-50/50 hover:bg-gray-100 transition-colors">
-                                                            <span class="font-bold">Edit</span>
-                                                            <svg class="w-5 h-5 text-blue-600/80" fill="none"
-                                                                stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                                    stroke-width="2"
-                                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                            </svg>
-                                                        </a>
+                                                    {{-- Dropdown Menu (Teleported) --}}
+                                                    <template x-teleport="body">
+                                                        <div x-show="open" x-transition:enter="transition ease-out duration-100"
+                                                            x-transition:enter-start="transform opacity-0 scale-95"
+                                                            x-transition:enter-end="transform opacity-100 scale-100"
+                                                            x-transition:leave="transition ease-in duration-75"
+                                                            x-transition:leave-start="transform opacity-100 scale-100"
+                                                            x-transition:leave-end="transform opacity-0 scale-95"
+                                                            class="fixed w-40 bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-gray-100 z-[9999] py-1"
+                                                            :style="`top: ${top}px; left: ${left}px`" style="display: none;">
 
-                                                        {{-- Delete --}}
-                                                        <button type="button"
-                                                                @click="confirmDelete('{{ route('administrasi-perjalanan-dinas.destroy', $item->id_adm_perjalanan_dinas) }}')"
-                                                                class="w-full flex items-center justify-between px-4 py-2.5 text-sm text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors">
-                                                            <span class="font-medium">Delete</span>
-                                                            <svg class="w-5 h-5 text-red-500/80" fill="none"
-                                                                stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                                    stroke-width="2"
-                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                            </svg>
-                                                        </button>
-                                                        @endif
-                                                    </div>
-                                                </template>
+                                                            {{-- View --}}
+                                                            <a href="{{ route('administrasi-perjalanan-dinas.show', $item->id_adm_perjalanan_dinas) }}"
+                                                                class="flex items-center justify-between px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                                                                <span class="font-medium">View</span>
+                                                                <svg class="w-5 h-5 text-blue-500/70" fill="none"
+                                                                    stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                        stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                        stroke-width="2"
+                                                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                </svg>
+                                                            </a>
+
+                                                            @if(auth()->user()->canManageData())
+                                                            {{-- Edit --}}
+                                                            <a href="{{ route('administrasi-perjalanan-dinas.edit', $item->id_adm_perjalanan_dinas) }}"
+                                                                class="flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 bg-gray-50/50 hover:bg-gray-100 transition-colors">
+                                                                <span class="font-bold">Edit</span>
+                                                                <svg class="w-5 h-5 text-blue-600/80" fill="none"
+                                                                    stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                        stroke-width="2"
+                                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                                </svg>
+                                                            </a>
+
+                                                            {{-- Delete --}}
+                                                            <button type="button"
+                                                                    @click="confirmDelete('{{ route('administrasi-perjalanan-dinas.destroy', $item->id_adm_perjalanan_dinas) }}')"
+                                                                    class="w-full flex items-center justify-between px-4 py-2.5 text-sm text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors">
+                                                                <span class="font-medium">Delete</span>
+                                                                <svg class="w-5 h-5 text-red-500/80" fill="none"
+                                                                    stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                        stroke-width="2"
+                                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                </svg>
+                                                            </button>
+                                                            @endif
+                                                        </div>
+                                                    </template>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </td>
+                                        </td>
+                                        @endif
+                                    @endif
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="10" class="px-6 py-8 text-center text-gray-500">
+                                    <td colspan="{{ 7 + ($visibleColumns['file'] ? 1 : 0) + ($visibleColumns['last_update'] ? 1 : 0) }}" class="px-6 py-8 text-center text-gray-500">
                                         <div class="flex flex-col items-center justify-center">
                                             <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">

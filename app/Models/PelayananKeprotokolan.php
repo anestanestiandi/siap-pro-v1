@@ -26,6 +26,8 @@ class PelayananKeprotokolan extends Model
 
     protected $casts = [
         'tanggal_kegiatan' => 'date',
+        'id_anggota' => 'array',
+        'id_petugas' => 'array',
     ];
 
     public function jenisPelayanan()
@@ -33,15 +35,16 @@ class PelayananKeprotokolan extends Model
         return $this->belongsTo(MasterJenisPelayanan::class, 'id_jenis_pelayanan', 'id_jenis_pelayanan');
     }
 
-    public function anggotaDewan()
+    public function getAnggotaDewanAttribute()
     {
-        return $this->belongsToMany(MasterAnggotaDewan::class, 'pelayanan_anggota_dewan', 'id_pelayanan', 'id_anggota')
-                    ->withTimestamps();
+        $ids = is_string($this->id_anggota) ? json_decode($this->id_anggota) : $this->id_anggota;
+        return MasterAnggotaDewan::whereIn('id_anggota', (array)($ids ?: []))->get();
     }
 
-    public function petugasProtokol()
+    public function getPetugasAttribute()
     {
-        return $this->belongsTo(MasterPetugasProtokol::class, 'id_petugas', 'id_petugas');
+        $ids = is_string($this->id_petugas) ? json_decode($this->id_petugas) : $this->id_petugas;
+        return MasterPetugasProtokol::whereIn('id_petugas', (array)($ids ?: []))->get();
     }
 
     public function creator()
@@ -52,16 +55,6 @@ class PelayananKeprotokolan extends Model
     public function updater()
     {
         return $this->belongsTo(User::class, 'updated_by', 'id_user');
-    }
-
-    public function petugas()
-    {
-        return $this->belongsToMany(
-            MasterPetugasProtokol::class,
-            'pelayanan_petugas',
-            'id_pelayanan',
-            'id_petugas'
-        );
     }
 
     public function historyLogs()

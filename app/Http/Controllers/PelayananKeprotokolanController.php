@@ -17,8 +17,8 @@ class PelayananKeprotokolanController extends Controller
      */
     public function index(Request $request)
     {
-        // 1. Initial Query
-        $query = PelayananKeprotokolan::with(['anggotaDewan', 'jenisPelayanan', 'petugas']);
+        // 1. Initial Query (Hanya memuat relasi asli, Accessor JSON akan dimuat otomatis di view)
+        $query = PelayananKeprotokolan::with(['jenisPelayanan']);
 
         // 2. Define Filter Logic (Closure for reusability)
         $applyFilter = function ($q) use ($request) {
@@ -42,12 +42,25 @@ class PelayananKeprotokolanController extends Controller
                 $q->where(function ($sub) use ($search) {
                     $sub->where('nama_kegiatan', 'like', "%{$search}%")
                         ->orWhere('tempat', 'like', "%{$search}%")
-                        ->orWhereHas('anggotaDewan', function ($q) use ($search) {
-                            $q->where('nama', 'like', "%{$search}%");
-                        })
                         ->orWhereHas('jenisPelayanan', function ($q) use ($search) {
                             $q->where('nama_jenis', 'like', "%{$search}%");
                         });
+
+                    // Search names in JSON field id_anggota
+                    $matchingAnggotaIds = MasterAnggotaDewan::where('nama', 'like', "%{$search}%")
+                        ->pluck('id_anggota')->toArray();
+                    foreach ($matchingAnggotaIds as $id) {
+                        $sub->orWhereJsonContains('id_anggota', (string)$id)
+                            ->orWhereJsonContains('id_anggota', (int)$id);
+                    }
+
+                    // Search names in JSON field id_petugas
+                    $matchingPetugasIds = MasterPetugasProtokol::where('nama', 'like', "%{$search}%")
+                        ->pluck('id_petugas')->toArray();
+                    foreach ($matchingPetugasIds as $id) {
+                        $sub->orWhereJsonContains('id_petugas', (string)$id)
+                            ->orWhereJsonContains('id_petugas', (int)$id);
+                    }
                 });
             }
         };
@@ -95,7 +108,7 @@ class PelayananKeprotokolanController extends Controller
         $totalProtokol = MasterPetugasProtokol::count();
 
         // 4. Sorting
-        $query->orderBy('created_at', 'desc');
+        $query->orderBy('tanggal_kegiatan', 'desc')->orderBy('waktu', 'desc');
 
         // 5. Export Logic
         if ($request->has('export')) {
@@ -121,7 +134,7 @@ class PelayananKeprotokolanController extends Controller
         }
 
         // 6. Pagination
-        $kegiatan = $query->paginate(10)->withQueryString();
+        $kegiatan = $query->paginate(10)->onEachSide(1)->withQueryString();
 
         return view('pelayanan-keprotokolan.index', compact(
             'kegiatan',
@@ -163,7 +176,7 @@ class PelayananKeprotokolanController extends Controller
             'nama_kegiatan' => 'required|string|max:255',
             'petugas_id' => 'nullable|array',
             'petugas_id.*' => 'exists:master_petugas_protokol,id_petugas',
-            'file' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
+            'file' => 'nullable|file|mimes:pdf,doc,docx,jpeg,jpg,png,xls,xlsx|max:10240',
         ];
 
         $validated = $request->validate($rules);
@@ -176,26 +189,16 @@ class PelayananKeprotokolanController extends Controller
 
         // Insert data pelayanan keprotokolan
         $pelayanan = PelayananKeprotokolan::create([
-            'id_anggota' => $validated['anggota_dewan_id'][0] ?? null,
+            'id_anggota' => $validated['anggota_dewan_id'], // Simpan sebagai array JSON
             'id_jenis_pelayanan' => $validated['id_jenis_pelayanan'],
             'nama_kegiatan' => $validated['nama_kegiatan'],
             'tanggal_kegiatan' => $validated['tanggal_kegiatan'],
             'waktu' => $validated['waktu'],
             'tempat' => $validated['tempat'] ?? null,
-            'id_petugas' => $validated['petugas_id'][0] ?? null, // Sync first petugas to column
+            'id_petugas' => $validated['petugas_id'] ?? [], // Simpan sebagai array JSON
             'file_path' => $filePath,
             'created_by' => Auth::user()->id_user ?? Auth::id(),
         ]);
-
-        // Attach anggota dewan to pivot table
-        if (!empty($validated['anggota_dewan_id'])) {
-            $pelayanan->anggotaDewan()->sync($validated['anggota_dewan_id']);
-        }
-
-        // Attach petugas to pivot table
-        if (!empty($validated['petugas_id'])) {
-            $pelayanan->petugas()->sync($validated['petugas_id']);
-        }
 
         return redirect()->route('pelayanan-keprotokolan')
             ->with('success', 'Kegiatan pelayanan keprotokolan berhasil ditambahkan.');
@@ -206,7 +209,7 @@ class PelayananKeprotokolanController extends Controller
      */
     public function show($id)
     {
-        $item = PelayananKeprotokolan::with(['anggotaDewan', 'jenisPelayanan', 'petugas', 'creator', 'updater'])
+        $item = PelayananKeprotokolan::with(['jenisPelayanan', 'creator', 'updater'])
             ->findOrFail($id);
 
         return view('pelayanan-keprotokolan.show', compact('item'));
@@ -242,7 +245,7 @@ class PelayananKeprotokolanController extends Controller
             'nama_kegiatan' => 'required|string|max:255',
             'petugas_id' => 'nullable|array',
             'petugas_id.*' => 'exists:master_petugas_protokol,id_petugas',
-            'file' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
+            'file' => 'nullable|file|mimes:pdf,doc,docx,jpeg,jpg,png,xls,xlsx|max:10240',
         ];
 
         $validated = $request->validate($rules);
@@ -255,24 +258,22 @@ class PelayananKeprotokolanController extends Controller
             $pelayanan->file_path = $request->file('file')->store('pelayanan-keprotokolan', 'public');
         }
 
-        $pelayanan->update([
-            'id_anggota' => $validated['anggota_dewan_id'][0] ?? null,
+        $updateData = [
+            'id_anggota' => $validated['anggota_dewan_id'], // Update sebagai array JSON
             'id_jenis_pelayanan' => $validated['id_jenis_pelayanan'],
             'nama_kegiatan' => $validated['nama_kegiatan'],
             'tanggal_kegiatan' => $validated['tanggal_kegiatan'],
             'waktu' => $validated['waktu'],
             'tempat' => $validated['tempat'] ?? null,
-            'id_petugas' => $validated['petugas_id'][0] ?? null, // Sync first petugas to column
             'updated_by' => Auth::id(),
-        ]);
+        ];
 
-        if (isset($validated['anggota_dewan_id'])) {
-            $pelayanan->anggotaDewan()->sync($validated['anggota_dewan_id']);
+        // Only update petugas if user is super admin (since field is hidden for others)
+        if (auth()->user()->isSuperAdmin()) {
+            $updateData['id_petugas'] = $validated['petugas_id'] ?? [];
         }
 
-        if (isset($validated['petugas_id'])) {
-            $pelayanan->petugas()->sync($validated['petugas_id']);
-        }
+        $pelayanan->update($updateData);
 
         return redirect()->route('pelayanan-keprotokolan')
             ->with('success', 'Kegiatan berhasil diperbarui.');

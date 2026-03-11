@@ -63,7 +63,7 @@ class HistoryLogActivityController extends Controller
             }
         }
 
-        $logs = $query->paginate(10)->withQueryString();
+        $logs = $query->paginate(10)->onEachSide(1)->withQueryString();
 
         return view('history-log.index', compact('logs'));
     }

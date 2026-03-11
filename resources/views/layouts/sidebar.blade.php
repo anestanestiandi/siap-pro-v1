@@ -108,52 +108,71 @@
     {{-- User Profile (Bottom) with Dropdown --}}
     <div class="px-4 py-4 border-t border-white/10 relative" x-data="{ profileOpen: false }">
 
-        {{-- Dropdown Popup (Opens Upward) --}}
-        {{-- Dropdown Popup (Opens Upward) --}}
+        {{-- Dropdown Popup --}}
         <div x-cloak x-show="profileOpen" x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
-            x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0"
-            x-transition:leave-end="opacity-0 translate-y-2" @click.outside="profileOpen = false"
-            class="absolute bottom-full left-4 right-4 mb-2 bg-white rounded-lg shadow-xl py-2 z-50">
-            {{-- Log Out --}}
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit"
-                    class="w-full flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
-                    <span>Log Out</span>
-                    <svg class="w-5 h-5 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                        stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
-                    </svg>
-                </button>
-            </form>
+            x-transition:enter-start="opacity-0 scale-95" 
+            x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-150" 
+            x-transition:leave-start="opacity-100" 
+            x-transition:leave-end="opacity-0" 
+            @click.outside="profileOpen = false"
+            class="absolute z-50 bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] py-2 border border-gray-100 overflow-hidden"
+            :class="desktopSidebarOpen ? 'bottom-full left-4 right-4 mb-3' : 'left-full bottom-0 mb-1 ml-4 w-64'">
+            
+            {{-- Mobile/Collapsed Header --}}
+            <div class="px-4 py-3 border-b border-gray-50 mb-1" x-show="!desktopSidebarOpen">
+                <p class="text-[10px] font-extrabold text-[#3B5286]/40 uppercase tracking-[0.2em] mb-0.5">Account</p>
+                <p class="text-sm font-bold text-gray-800 truncate">{{ Auth::user()->nama_lengkap }}</p>
+                <p class="text-[10px] text-slate-400 font-medium">{{ Auth::user()->role }}</p>
+            </div>
 
             {{-- History Log Activity — super_admin & admin only --}}
             @if(in_array(Auth::user()->role, ['super_admin', 'admin']))
                 <a href="{{ route('history-log-activity') }}"
-                    class="flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
-                    <span>History Log Activity</span>
-                    <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                        stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                    </svg>
+                    class="group flex items-center justify-between px-4 py-2.5 text-sm text-slate-600 hover:bg-[#3B5286]/5 hover:text-[#3B5286] transition-all">
+                    <span class="font-semibold">History Log Activity</span>
+                    <div class="p-1 rounded-lg bg-gray-50 group-hover:bg-[#3B5286]/10 transition-colors">
+                        <svg class="w-4 h-4 text-slate-400 group-hover:text-[#3B5286]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                    </div>
                 </a>
             @endif
 
             {{-- Management User — super_admin only --}}
             @if(Auth::user()->role === 'super_admin')
                 <a href="{{ route('management-user.index') }}"
-                    class="flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
-                    <span>Management User</span>
-                    <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                        stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
-                    </svg>
+                    class="group flex items-center justify-between px-4 py-2.5 text-sm text-slate-600 hover:bg-[#3B5286]/5 hover:text-[#3B5286] transition-all">
+                    <span class="font-semibold">Management User</span>
+                    <div class="p-1 rounded-lg bg-gray-50 group-hover:bg-[#3B5286]/10 transition-colors">
+                        <svg class="w-4 h-4 text-slate-400 group-hover:text-[#3B5286]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+                        </svg>
+                    </div>
                 </a>
             @endif
+
+            <div class="h-px bg-gray-100 my-1 mx-2"></div>
+
+            {{-- Log Out --}}
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit"
+                    class="group w-full flex items-center justify-between px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-all">
+                    <span class="font-bold">Log Out</span>
+                    <div class="p-1 rounded-lg bg-red-50 group-hover:bg-red-100 transition-colors">
+                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                        </svg>
+                    </div>
+                </button>
+            </form>
         </div>
 
         {{-- Profile Button (Click to toggle) --}}

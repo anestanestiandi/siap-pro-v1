@@ -26,6 +26,7 @@ class AdministrasiPerjalananDinas extends Model
     protected $casts = [
         'tanggal_mulai' => 'date',
         'tanggal_selesai' => 'date',
+        'id_petugas' => 'array',
     ];
 
     public function petugasProtokol()
@@ -38,11 +39,10 @@ class AdministrasiPerjalananDinas extends Model
         return $this->belongsTo(MasterJenisPerjalananDinas::class, 'id_jenis_perjalanan_dinas', 'id_jenis_perjalanan');
     }
 
-    // Relationship with Petugas (Many-to-Many)
-    public function petugas()
+    public function getPetugasAttribute()
     {
-        return $this->belongsToMany(MasterPetugasProtokol::class, 'administrasi_perjalanan_dinas_petugas', 'id_adm_perjalanan_dinas', 'id_petugas')
-                    ->withTimestamps();
+        $ids = is_string($this->id_petugas) ? json_decode($this->id_petugas) : $this->id_petugas;
+        return MasterPetugasProtokol::whereIn('id_petugas', (array)($ids ?: []))->get();
     }
 
     public function creator()

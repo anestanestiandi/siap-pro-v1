@@ -13,6 +13,6 @@ Route::middleware('guest')->group(function () {
 
 // Auth routes (hanya bisa diakses saat sudah login)
 Route::middleware('auth')->group(function () {
-    Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
+    Route::match(['get', 'post'], 'logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
 });

@@ -15,35 +15,5 @@ class MasterPetugasProtokol extends Model
         'is_active' => 'boolean',
     ];
 
-    /**
-     * Relasi ke pelayanan keprotokolan.
-     */
-    public function pelayanan()
-    {
-        return $this->belongsToMany(PelayananKeprotokolan::class, 'pelayanan_petugas', 'id_petugas', 'id_pelayanan');
-    }
-
-    /**
-     * Relasi ke persidangan.
-     */
-    public function persidangan()
-    {
-        return $this->belongsToMany(Persidangan::class, 'persidangan_petugas', 'id_petugas', 'id_persidangan');
-    }
-
-    /**
-     * Relasi ke administrasi perjalanan dinas.
-     */
-    public function perjalananDinas()
-    {
-        return $this->belongsToMany(AdministrasiPerjalananDinas::class, 'administrasi_perjalanan_dinas_petugas', 'id_petugas', 'id_adm_perjalanan_dinas');
-    }
-
-    /**
-     * Relasi ke kunjungan kerja.
-     */
-    public function kunjunganKerja()
-    {
-        return $this->belongsToMany(KunjunganKerja::class, 'kunjungan_petugas', 'id_petugas', 'id_kunjungan');
-    }
+    // Pivot relationships removed as per request to use module-specific JSON columns.
 }
