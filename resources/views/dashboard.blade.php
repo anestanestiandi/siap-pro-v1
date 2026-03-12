@@ -515,7 +515,11 @@
             };
 
             // a. Fixed Y-Axis Chart (No data, only axis)
-            new Chart(document.getElementById('yAxisChart'), {
+            const yAxisCtx = document.getElementById('yAxisChart');
+            if (Chart.getChart(yAxisCtx)) {
+                Chart.getChart(yAxisCtx).destroy();
+            }
+            new Chart(yAxisCtx, {
                 type: 'bar',
                 data: { labels: [''], datasets: [] },
                 options: {
@@ -535,7 +539,11 @@
             });
 
             // b. Main Scrollable Bar Chart
-            new Chart(document.getElementById('jenisKegiatanChart'), {
+            const jenisCtx = document.getElementById('jenisKegiatanChart');
+            if (Chart.getChart(jenisCtx)) {
+                Chart.getChart(jenisCtx).destroy();
+            }
+            new Chart(jenisCtx, {
                 type: 'bar',
                 data: {
                     labels: barDataRaw.map(item => item.nama),
@@ -604,7 +612,13 @@
                     jenisColorsMap[item.nama] = softPaletteStr[i % softPaletteStr.length];
                 });
                 
+                
                 const mappedColors = dewan.breakdown.map(b => jenisColorsMap[b.label] || '#94a3b8');
+
+                // PENTING: Hapus grafik lama jika ada agar tidak menumpuk saat hover
+                if (Chart.getChart(ctx)) {
+                    Chart.getChart(ctx).destroy();
+                }
 
                 new Chart(ctx, {
                     type: 'doughnut',
@@ -615,10 +629,10 @@
                             backgroundColor: mappedColors,
                             borderWidth: 2, 
                             borderColor: '#ffffff', 
-                            hoverOffset: 12,
-                            spacing: 3,
+                            hoverOffset: 6, // Diperkecil agar hover lebih halus
+                            spacing: 2, // Diperkecil agar tidak terlalu renggang
                             cutout: '58%', 
-                            borderRadius: { outerRadius: 2, innerRadius: 2 }
+                            borderRadius: { outerRadius: 4, innerRadius: 4 }
                         }]
                     },
                     options: {
