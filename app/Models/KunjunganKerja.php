@@ -12,6 +12,7 @@ class KunjunganKerja extends Model
 
     protected $casts = [
         'tanggal_kunjungan' => 'date',
+        'tanggal_selesai' => 'date',
         'rombongan' => 'array',
         'id_anggota' => 'array',
         'id_petugas' => 'array',

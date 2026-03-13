@@ -58,7 +58,12 @@
                 <tr>
                     <td style="text-align: center;">{{ $loop->iteration }}</td>
                     @if(in_array('tanggal', $columns))
-                        <td>{{ \Carbon\Carbon::parse($item->tanggal_kunjungan)->isoFormat('D MMMM Y') }}</td>
+                        <td>
+                            {{ \Carbon\Carbon::parse($item->tanggal_kunjungan)->isoFormat('D MMMM Y') }}
+                            @if(!empty($item->tanggal_selesai) && \Carbon\Carbon::parse($item->tanggal_selesai)->format('Y-m-d') !== \Carbon\Carbon::parse($item->tanggal_kunjungan)->format('Y-m-d'))
+                                - {{ \Carbon\Carbon::parse($item->tanggal_selesai)->isoFormat('D MMMM Y') }}
+                            @endif
+                        </td>
                     @endif
                     @if(in_array('waktu', $columns))
                         <td>{{ $item->waktu ? \Carbon\Carbon::parse($item->waktu)->format('H:i') . ' WIB' : '-' }}</td>

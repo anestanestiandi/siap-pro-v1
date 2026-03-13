@@ -67,12 +67,12 @@
                                 Tanggal
                             </label>
                             <div class="relative">
-                                <input type="text" id="tanggal_kunjungan" name="tanggal_kunjungan" value="{{ old('tanggal_kunjungan', $item->tanggal_kunjungan ? $item->tanggal_kunjungan->format('Y-m-d') : '') }}" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-[#3B5286] focus:ring focus:ring-[#3B5286] focus:ring-opacity-50 h-10 pl-4 bg-white" autocomplete="off">
+                                <input type="text" id="tanggal" name="tanggal" value="{{ old('tanggal', $item->tanggal_kunjungan ? $item->tanggal_kunjungan->format('Y-m-d') . ($item->tanggal_selesai && $item->tanggal_selesai->format('Y-m-d') !== $item->tanggal_kunjungan->format('Y-m-d') ? ' to ' . $item->tanggal_selesai->format('Y-m-d') : '') : '') }}" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-[#3B5286] focus:ring focus:ring-[#3B5286] focus:ring-opacity-50 h-10 pl-4 bg-white" autocomplete="off">
                                 <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                 </div>
                             </div>
-                            @error('tanggal_kunjungan') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                            @error('tanggal') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
 
                         {{-- Pukul --}}
@@ -228,7 +228,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // FlatPickr for Date
-            flatpickr("#tanggal_kunjungan", {
+            flatpickr("#tanggal", {
+                mode: "range",
                 dateFormat: "Y-m-d",
                 altInput: true,
                 altFormat: "l, j F Y",
@@ -250,7 +251,9 @@
             new TomSelect('#rombongan', { 
                 plugins: ['remove_button'], 
                 create: true, 
-                placeholder: 'Pilih pelaksana atau ketik nama baru...' 
+                placeholder: 'Pilih pelaksana atau ketik nama baru...',
+                maxItems: 100,
+                maxOptions: 100
             });
             @if(auth()->user()->isSuperAdmin())
             new TomSelect('#petugas_id', { plugins: ['remove_button'], placeholder: 'Pilih petugas protokol...' });

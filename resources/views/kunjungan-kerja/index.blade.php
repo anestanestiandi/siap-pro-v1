@@ -530,14 +530,22 @@
                                     <td class="px-3 py-4 whitespace-nowrap text-center text-xs">
                                         @php
                                             $today = now()->startOfDay();
-                                            $kunjunganDate = $item->tanggal_kunjungan ? $item->tanggal_kunjungan->copy()->startOfDay() : null;
-                                            $isToday = $kunjunganDate && $kunjunganDate->equalTo($today);
-                                            $isFuture = $kunjunganDate && $kunjunganDate->gt($today);
+                                            $kunjunganStart = $item->tanggal_kunjungan ? $item->tanggal_kunjungan->copy()->startOfDay() : null;
+                                            $kunjunganEnd = $item->tanggal_selesai ? $item->tanggal_selesai->copy()->startOfDay() : $kunjunganStart;
+                                            $isToday = $kunjunganStart && $kunjunganEnd && $today->betweenIncluded($kunjunganStart, $kunjunganEnd);
+                                            $isFuture = $kunjunganStart && $kunjunganStart->gt($today);
                                             $chipClass = $isToday ? 'bg-blue-50 text-blue-700 border-blue-100' : ($isFuture ? 'bg-red-50 text-red-700 border-red-100' : 'text-gray-500 italic');
                                             $hasBg = $isToday || $isFuture;
                                         @endphp
                                         <div class="inline-block px-2 py-1 rounded-lg font-semibold {{ $hasBg ? $chipClass . ' border' : $chipClass }}">
-                                            {{ $item->tanggal_kunjungan ? $item->tanggal_kunjungan->format('d/m/y') : '-' }}
+                                            @if($item->tanggal_kunjungan)
+                                                {{ $item->tanggal_kunjungan->format('d/m/y') }}
+                                                @if($item->tanggal_selesai && $item->tanggal_selesai->ne($item->tanggal_kunjungan))
+                                                    - {{ $item->tanggal_selesai->format('d/m/y') }}
+                                                @endif
+                                            @else
+                                                -
+                                            @endif
                                         </div>
                                     </td>
 

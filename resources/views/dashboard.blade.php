@@ -159,9 +159,6 @@
                             </div>
                         </div>
                     </div>
-                    <span class="text-sm font-bold text-[#3B5286] uppercase tracking-widest">
-                        {{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }}
-                    </span>
                 </div>
 
                 <div x-show="showEvents" 
@@ -256,10 +253,10 @@
                         <select name="filter_type" onchange="this.form.submit()" 
                             class="appearance-none !bg-none w-full bg-white border border-[#3B5286]/20 rounded-full text-xs font-semibold text-[#3B5286] py-1.5 px-3 pr-8 cursor-pointer hover:border-[#3B5286]/40 transition-all focus:ring-2 focus:ring-[#3B5286]/30 shadow-sm min-w-[110px]">
                             <option value="all" {{ request('filter_type') == 'all' ? 'selected' : '' }}>All Types</option>
-                            <option value="Pelayanan Keprotokolan" {{ request('filter_type') == 'Pelayanan Keprotokolan' ? 'selected' : '' }}>Protokol</option>
+                            <option value="Pelayanan Keprotokolan" {{ request('filter_type') == 'Pelayanan Keprotokolan' ? 'selected' : '' }}>Pelayanan Keprotokolan</option>
                             <option value="Persidangan" {{ request('filter_type') == 'Persidangan' ? 'selected' : '' }}>Persidangan</option>
                             <option value="Kunjungan Kerja" {{ request('filter_type') == 'Kunjungan Kerja' ? 'selected' : '' }}>Kunjungan Kerja</option>
-                            <option value="Administrasi Perjalanan Dinas" {{ request('filter_type') == 'Administrasi Perjalanan Dinas' ? 'selected' : '' }}>Perjalanan Dinas</option>
+                            <option value="Administrasi Perjalanan Dinas" {{ request('filter_type') == 'Administrasi Perjalanan Dinas' ? 'selected' : '' }}>Administrasi Perjalanan Dinas</option>
                         </select>
                         <div class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#3B5286]">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>

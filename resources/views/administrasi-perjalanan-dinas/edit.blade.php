@@ -310,7 +310,8 @@
                     field: "text",
                     direction: "asc"
                 },
-                maxItems: null,
+                maxItems: 100,
+                maxOptions: 100,
                 persist: false
             };
 
