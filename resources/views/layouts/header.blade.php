@@ -58,9 +58,15 @@
                     timer: null,
                     updateClock() {
                         const now = new Date();
-                        this.dateText = now
-                            .toLocaleDateString('en-US', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
-                            .toUpperCase();
+                        const days = ['MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS', 'JUMAT', 'SABTU'];
+                        const months = ['JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI', 'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'];
+                        
+                        const dayName = days[now.getDay()];
+                        const date = now.getDate();
+                        const monthName = months[now.getMonth()];
+                        const year = now.getFullYear();
+                        
+                        this.dateText = `${dayName}, ${date} ${monthName} ${year}`;
                         this.timeText = now.toLocaleTimeString('en-GB', { hour12: false });
                     },
                     init() {

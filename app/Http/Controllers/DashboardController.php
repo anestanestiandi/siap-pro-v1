@@ -24,84 +24,91 @@ class DashboardController extends Controller
         // Filters
         $filterType = $request->get('filter_type', 'all');
         $sortYear = $request->get('sort_year', 'desc');
-        
+
         $sortOrder = in_array($sortYear, ['asc', 'desc']) ? $sortYear : 'desc';
         $year = is_numeric($sortYear) ? $sortYear : null;
 
         // 1. Data untuk Bar Chart (Jenis Kegiatan)
-        
+
         // Pelayanan
         $pelayananQuery = MasterJenisPelayanan::query();
-        $pelayananQuery->withCount(['pelayananKeprotokolan' => function($q) use ($year) {
-            if ($year) $q->whereYear('tanggal_kegiatan', $year);
+        $pelayananQuery->withCount(['pelayananKeprotokolan' => function ($q) use ($year) {
+            if ($year)
+                $q->whereYear('tanggal_kegiatan', $year);
         }]);
-        $jenisPelayanan = $pelayananQuery->get()->map(function($item) {
+        $jenisPelayanan = $pelayananQuery->get()->map(function ($item) {
             return [
-                'nama' => $item->nama_jenis, 
-                'total' => $item->pelayanan_keprotokolan_count, 
-                'kategori' => 'Pelayanan Keprotokolan'
+            'nama' => $item->nama_jenis,
+            'total' => $item->pelayanan_keprotokolan_count,
+            'kategori' => 'Pelayanan Keprotokolan'
             ];
         });
 
         // Persidangan
         $persidanganQuery = MasterJenisPersidangan::query();
-        $persidanganQuery->withCount(['persidangan' => function($q) use ($year) {
-            if ($year) $q->whereYear('tanggal_persidangan', $year);
+        $persidanganQuery->withCount(['persidangan' => function ($q) use ($year) {
+            if ($year)
+                $q->whereYear('tanggal_persidangan', $year);
         }]);
-        $jenisPersidangan = $persidanganQuery->get()->map(function($item) {
+        $jenisPersidangan = $persidanganQuery->get()->map(function ($item) {
             return [
-                'nama' => $item->nama_jenis, 
-                'total' => $item->persidangan_count, 
-                'kategori' => 'Persidangan'
+            'nama' => $item->nama_jenis,
+            'total' => $item->persidangan_count,
+            'kategori' => 'Persidangan'
             ];
         });
 
         // Kunjungan Kerja
         $kunjunganQuery = MasterJenisKunjungan::query();
-        $kunjunganQuery->withCount(['kunjunganKerja' => function($q) use ($year) {
-            if ($year) $q->whereYear('tanggal_kunjungan', $year);
+        $kunjunganQuery->withCount(['kunjunganKerja' => function ($q) use ($year) {
+            if ($year)
+                $q->whereYear('tanggal_kunjungan', $year);
         }]);
         $jenisKunjunganRaw = $kunjunganQuery->get();
         if ($isEksternal) {
-            $jenisKunjungan = $jenisKunjunganRaw->filter(function($item) {
+            $jenisKunjungan = $jenisKunjunganRaw->filter(function ($item) {
                 $name = strtolower($item->nama_jenis);
-                if (str_contains($name, 'pendampingan')) return false;
+                if (str_contains($name, 'pendampingan'))
+                    return false;
                 return true;
-            })->map(function($item) {
+            })->map(function ($item) {
                 $name = strtolower($item->nama_jenis);
                 $displayName = $item->nama_jenis;
                 if (str_contains($name, 'luar negeri')) {
                     $displayName = 'Kunjungan Kerja Luar Negeri';
-                } elseif (str_contains($name, 'dalam negeri')) {
+                }
+                elseif (str_contains($name, 'dalam negeri')) {
                     $displayName = 'Kunjungan Kerja Dalam Negeri';
                 }
 
                 return [
-                    'nama' => $displayName,
-                    'total' => $item->kunjungan_kerja_count,
-                    'kategori' => 'Kunjungan Kerja'
+                'nama' => $displayName,
+                'total' => $item->kunjungan_kerja_count,
+                'kategori' => 'Kunjungan Kerja'
                 ];
             })->values();
-        } else {
-            $jenisKunjungan = $jenisKunjunganRaw->map(function($item) {
+        }
+        else {
+            $jenisKunjungan = $jenisKunjunganRaw->map(function ($item) {
                 return [
-                    'nama' => $item->nama_jenis, 
-                    'total' => $item->kunjungan_kerja_count, 
-                    'kategori' => 'Kunjungan Kerja'
+                'nama' => $item->nama_jenis,
+                'total' => $item->kunjungan_kerja_count,
+                'kategori' => 'Kunjungan Kerja'
                 ];
             });
         }
 
         // Perjalanan Dinas
         $perjalananQuery = MasterJenisPerjalananDinas::query();
-        $perjalananQuery->withCount(['admPerjalananDinas' => function($q) use ($year) {
-            if ($year) $q->whereYear('tanggal_mulai', $year);
+        $perjalananQuery->withCount(['admPerjalananDinas' => function ($q) use ($year) {
+            if ($year)
+                $q->whereYear('tanggal_mulai', $year);
         }]);
-        $jenisPerjalanan = $perjalananQuery->get()->map(function($item) {
+        $jenisPerjalanan = $perjalananQuery->get()->map(function ($item) {
             return [
-                'nama' => $item->nama_jenis, 
-                'total' => $item->adm_perjalanan_dinas_count, 
-                'kategori' => 'Administrasi Perjalanan Dinas'
+            'nama' => $item->nama_jenis,
+            'total' => $item->adm_perjalanan_dinas_count,
+            'kategori' => 'Administrasi Perjalanan Dinas'
             ];
         });
 
@@ -115,7 +122,8 @@ class DashboardController extends Controller
         // Sorting
         if ($sortOrder === 'desc') {
             $allJenis = $allJenis->sortByDesc('total');
-        } else {
+        }
+        else {
             $allJenis = $allJenis->sortBy('total');
         }
 
@@ -132,74 +140,75 @@ class DashboardController extends Controller
         // Pelayanan
         $rawTodayEvents = $rawTodayEvents->concat(
             PelayananKeprotokolan::with(['jenisPelayanan'])
-                ->whereDate('tanggal_kegiatan', $targetDate)
-                ->get()
-                ->map(fn($item) => [
-                    'title' => $item->nama_kegiatan,
-                    'time' => $item->waktu ? \Carbon\Carbon::parse($item->waktu)->format('H:i') : '—',
-                    'date' => $item->tanggal_kegiatan,
-                    'location' => $item->tempat,
-                    'category' => 'Pelayanan',
-                    'status' => 'Upcoming',
-                    'attendees' => $item->anggotaDewan->pluck('nama')->toArray()
-                ])
+            ->whereDate('tanggal_kegiatan', $targetDate)
+            ->get()
+            ->map(fn($item) => [
+        'title' => $item->nama_kegiatan,
+        'time' => $item->waktu ?\Carbon\Carbon::parse($item->waktu)->format('H:i') : '—',
+        'date' => $item->tanggal_kegiatan,
+        'location' => $item->tempat,
+        'category' => 'Pelayanan',
+        'status' => 'Upcoming',
+        'attendees' => $item->anggotaDewan->pluck('nama')->toArray()
+        ])
         );
 
         // Persidangan
         $rawTodayEvents = $rawTodayEvents->concat(
             Persidangan::with(['jenisPersidangan'])
-                ->whereDate('tanggal_persidangan', $targetDate)
-                ->get()
-                ->map(fn($item) => [
-                    'title' => $item->nama_persidangan,
-                    'time' => $item->waktu ? \Carbon\Carbon::parse($item->waktu)->format('H:i') : '—',
-                    'date' => $item->tanggal_persidangan,
-                    'location' => $item->tempat,
-                    'category' => 'Persidangan',
-                    'status' => 'Upcoming',
-                    'attendees' => $item->anggotaDewan->pluck('nama')->toArray()
-                ])
+            ->whereDate('tanggal_persidangan', $targetDate)
+            ->get()
+            ->map(fn($item) => [
+        'title' => $item->nama_persidangan,
+        'time' => $item->waktu ?\Carbon\Carbon::parse($item->waktu)->format('H:i') : '—',
+        'date' => $item->tanggal_persidangan,
+        'location' => $item->tempat,
+        'category' => 'Persidangan',
+        'status' => 'Upcoming',
+        'attendees' => $item->anggotaDewan->pluck('nama')->toArray()
+        ])
         );
 
         $rawTodayEvents = $rawTodayEvents->concat(
             KunjunganKerja::with(['provinsi'])
-                ->whereDate('tanggal_kunjungan', '<=', $targetDate)
-                ->whereRaw('DATE(COALESCE(tanggal_selesai, tanggal_kunjungan)) >= ?', [$targetDate->format('Y-m-d')])
-                ->get()
-                ->map(fn($item) => [
-                    'title' => $item->nama_kegiatan,
-                    'time' => $item->waktu ? \Carbon\Carbon::parse($item->waktu)->format('H:i') : '—',
-                    'date' => $item->tanggal_kunjungan,
-                    'location' => $item->tipe_tujuan == 'dalam_negeri' ? ($item->provinsi->nama_provinsi ?? 'Dalam Negeri') : $item->tujuan_luar_negeri,
-                    'category' => 'Kunjungan Kerja',
-                    'status' => 'Upcoming',
-                    'attendees' => $item->anggotaDewan->pluck('nama')->toArray()
-                ])
+            ->whereDate('tanggal_kunjungan', '<=', $targetDate)
+            ->whereRaw('DATE(COALESCE(tanggal_selesai, tanggal_kunjungan)) >= ?', [$targetDate->format('Y-m-d')])
+            ->get()
+            ->map(fn($item) => [
+        'title' => $item->nama_kegiatan,
+        'time' => $item->waktu ?\Carbon\Carbon::parse($item->waktu)->format('H:i') : '—',
+        'date' => $item->tanggal_kunjungan,
+        'location' => $item->tipe_tujuan == 'dalam_negeri' ? ($item->provinsi->nama_provinsi ?? 'Dalam Negeri') : $item->tujuan_luar_negeri,
+        'category' => 'Kunjungan Kerja',
+        'status' => 'Upcoming',
+        'attendees' => $item->anggotaDewan->pluck('nama')->toArray()
+        ])
         );
 
         $now = now();
-        $todayEvents = $rawTodayEvents->map(function($event) use ($now, $targetDate) {
+        $todayEvents = $rawTodayEvents->map(function ($event) use ($now, $targetDate) {
             $eventTime = null;
             if ($event['time'] !== '—') {
                 try {
                     $eventTime = \Carbon\Carbon::parse($targetDate->format('Y-m-d') . ' ' . $event['time']);
-                } catch (\Exception $e) {
+                }
+                catch (\Exception $e) {
                     $eventTime = null;
                 }
             }
             $event['is_past'] = $eventTime ? $eventTime->isPast() : false;
             return $event;
         })
-        ->sort(function($a, $b) {
+            ->sort(function ($a, $b) {
             if ($a['is_past'] === $b['is_past']) {
                 return strcmp($a['time'], $b['time']);
             }
             return $a['is_past'] <=> $b['is_past'];
         })
-        ->values();
+            ->values();
 
         // 3. Data untuk Anggota Dewan
-        $anggotaDewan = MasterAnggotaDewan::where('is_active', 1)->get()->map(function($anggota) use ($year, $isEksternal) {
+        $anggotaDewan = MasterAnggotaDewan::where('is_active', 1)->get()->map(function ($anggota) use ($year, $isEksternal) {
             // Pelayanan
             $pelayanan = PelayananKeprotokolan::whereJsonContains('id_anggota', (string)$anggota->id_anggota)
                 ->when($year, fn($q) => $q->whereYear('tanggal_kegiatan', $year))
@@ -221,22 +230,27 @@ class DashboardController extends Controller
                 ->when($year, fn($q) => $q->whereYear('tanggal_kunjungan', $year))
                 ->with('jenisKunjungan')
                 ->get()
-                ->filter(function($item) use ($isEksternal) {
-                    if ($isEksternal) {
-                        $label = strtolower($item->jenisKunjungan->nama_jenis);
-                        if (str_contains($label, 'pendampingan')) return false;
-                    }
-                    return true;
-                })
-                ->groupBy(function($item) use ($isEksternal) {
-                    $label = $item->jenisKunjungan->nama_jenis;
-                    if ($isEksternal) {
-                        $lowerLabel = strtolower($label);
-                        if (str_contains($lowerLabel, 'luar negeri')) return 'Kunjungan Kerja Luar Negeri';
-                        if (str_contains($lowerLabel, 'dalam negeri')) return 'Kunjungan Kerja Dalam Negeri';
-                    }
-                    return $label;
-                })
+                ->filter(function ($item) use ($isEksternal) {
+                if ($isEksternal) {
+                    $label = strtolower($item->jenisKunjungan->nama_jenis);
+                    if (str_contains($label, 'pendampingan'))
+                        return false;
+                }
+                return true;
+            }
+            )
+                ->groupBy(function ($item) use ($isEksternal) {
+                $label = $item->jenisKunjungan->nama_jenis;
+                if ($isEksternal) {
+                    $lowerLabel = strtolower($label);
+                    if (str_contains($lowerLabel, 'luar negeri'))
+                        return 'Kunjungan Kerja Luar Negeri';
+                    if (str_contains($lowerLabel, 'dalam negeri'))
+                        return 'Kunjungan Kerja Dalam Negeri';
+                }
+                return $label;
+            }
+            )
                 ->map(fn($group, $label) => ['label' => $label, 'value' => $group->count()]);
 
             // Perjalanan Dinas (Fallback search by name)
@@ -256,23 +270,25 @@ class DashboardController extends Controller
                 ->concat($perjalanan)
                 ->values()
                 ->toArray();
-            
+
             $total = collect($breakdown)->sum('value');
 
             return [
-                'nama' => $anggota->nama,
-                'total' => $total,
-                'tipe_count' => count($breakdown),
-                'breakdown' => $breakdown
+            'nama' => $anggota->nama,
+            'total' => $total,
+            'tipe_count' => count($breakdown),
+            'breakdown' => $breakdown
             ];
-        })->filter(function($d) { return $d['total'] > 0; })->sortByDesc('total')->take(8)->values();
+        })->filter(function ($d) {
+            return $d['total'] > 0;
+        })->sortByDesc('total')->take(8)->values();
 
         return view('dashboard', compact(
-            'allJenis', 
-            'totalKegiatan', 
-            'anggotaDewan', 
-            'todayEvents', 
-            'dateTitle', 
+            'allJenis',
+            'totalKegiatan',
+            'anggotaDewan',
+            'todayEvents',
+            'dateTitle',
             'dateFilter'
         ));
     }

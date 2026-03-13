@@ -117,46 +117,52 @@
 
             <div x-data="{ showEvents: true }" class="mb-6 bg-white rounded-[1.5rem] shadow-[0_10px_30px_-5px_rgba(0,0,0,0.05)] border border-gray-100/50 overflow-hidden">
                 <div class="flex items-center justify-between p-5 md:p-6 border-b border-gray-50 bg-white cursor-pointer select-none group" @click="showEvents = !showEvents">
-                    <div class="flex items-center gap-4">
-                        <div class="flex items-center gap-2">
-                            <h2 class="text-2xl font-bold text-[#3B5286] tracking-tight pl-1">{{ $dateTitle }}</h2>
-                            <svg class="w-5 h-5 text-[#3B5286] transition-all duration-300 transform opacity-0 group-hover:opacity-100" :class="showEvents ? 'rotate-180' : ''" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                            </svg>
-                        </div>
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-2xl font-bold text-[#3B5286] tracking-tight pl-1">{{ $dateTitle }}</h2>
+                        <svg class="w-5 h-5 text-[#3B5286] transition-all duration-300 transform opacity-0 group-hover:opacity-100" :class="showEvents ? 'rotate-180' : ''" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                        </svg>
+                    </div>
 
-                        {{-- Date Filter Dropdown --}}
-                        <div x-data="{ open: false }" class="relative" @click.stop>
-                            <button type="button" @click="open = !open" 
-                                class="flex items-center justify-between gap-2 px-3 py-1 bg-white border border-gray-100 rounded-full text-[10px] font-black uppercase tracking-widest text-[#3B5286] shadow-sm hover:bg-gray-50 transition-all min-w-[90px]">
-                                <span>{{ $dateFilter === 'tomorrow' ? 'Besok' : 'Hari Ini' }}</span>
-                                <svg class="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                    {{-- Date Filter Dropdown --}}
+                    <div x-data="{ open: false }" class="relative" @click.stop>
+                        <button type="button" @click="open = !open" 
+                            class="flex items-center justify-between gap-3 px-4 py-2 bg-[#3B5286]/5 border border-[#3B5286]/20 rounded-full text-[11px] font-extrabold uppercase tracking-wider text-[#3B5286] shadow-sm hover:bg-[#3B5286]/10 transition-all min-w-[120px]">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-3.5 h-3.5 text-[#3B5286]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                                 </svg>
-                            </button>
-                            
-                            <div x-show="open" @click.away="open = false" 
-                                x-transition:enter="transition ease-out duration-200"
-                                x-transition:enter-start="opacity-0 scale-95"
-                                x-transition:enter-end="opacity-100 scale-100"
-                                class="absolute left-0 mt-2 w-40 bg-white border border-gray-50 rounded-xl shadow-xl z-50 overflow-hidden p-1 ring-1 ring-black/5">
-                                <form action="{{ route('dashboard') }}" method="GET">
-                                    @foreach(['today' => 'Hari Ini', 'tomorrow' => 'Besok'] as $val => $label)
-                                        <button type="submit" name="date_filter" value="{{ $val }}"
-                                            class="w-full flex items-center justify-between px-3 py-2 text-[11px] font-bold rounded-lg transition-all {{ $dateFilter == $val ? 'bg-[#3B5286] text-white' : 'text-slate-600 hover:bg-[#3B5286]/5 hover:text-[#3B5286]' }}">
-                                            <span>{{ $label }}</span>
-                                            @if($dateFilter == $val)
-                                                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                                                </svg>
-                                            @endif
-                                        </button>
-                                    @endforeach
-                                    {{-- Preserve other filters if any --}}
-                                    <input type="hidden" name="filter_type" value="{{ request('filter_type', 'all') }}">
-                                    <input type="hidden" name="sort_year" value="{{ request('sort_year', 'desc') }}">
-                                </form>
+                                <span>{{ $dateFilter === 'tomorrow' ? 'Besok' : 'Hari Ini' }}</span>
                             </div>
+                            <svg class="w-3 h-3 text-[#3B5286]/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                        
+                        <div x-show="open" @click.away="open = false" 
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 translate-y-2 scale-95"
+                            x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                            class="absolute right-0 mt-2 w-44 bg-white border border-gray-100 rounded-2xl shadow-[0_15px_50px_-12px_rgba(0,0,0,0.15)] z-50 overflow-hidden p-1.5 ring-1 ring-black/5">
+                            <form action="{{ route('dashboard') }}" method="GET">
+                                @foreach(['today' => 'Hari Ini', 'tomorrow' => 'Besok'] as $val => $label)
+                                    <button type="submit" name="date_filter" value="{{ $val }}"
+                                        class="w-full flex items-center justify-between px-4 py-2.5 text-[12px] font-bold rounded-xl transition-all duration-200 mb-0.5 last:mb-0
+                                        {{ $dateFilter == $val 
+                                            ? 'bg-[#3B5286] text-white shadow-md' 
+                                            : 'text-slate-600 hover:bg-[#3B5286] hover:text-white hover:shadow-md' }}">
+                                        <span>{{ $label }}</span>
+                                        @if($dateFilter == $val)
+                                            <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        @endif
+                                    </button>
+                                @endforeach
+                                {{-- Preserve other filters if any --}}
+                                <input type="hidden" name="filter_type" value="{{ request('filter_type', 'all') }}">
+                                <input type="hidden" name="sort_year" value="{{ request('sort_year', 'desc') }}">
+                            </form>
                         </div>
                     </div>
                 </div>
