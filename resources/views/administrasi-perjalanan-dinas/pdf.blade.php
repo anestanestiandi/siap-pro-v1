@@ -15,7 +15,9 @@
 <body>
     <div class="header">
         <h1>DAFTAR KEGIATAN ADMINISTRASI PERJALANAN DINAS</h1>
-        @if(request('date'))
+        @if(request('start_date') && request('end_date'))
+            <p>Periode: {{ \Carbon\Carbon::parse(request('start_date'))->isoFormat('D MMMM Y') }} - {{ \Carbon\Carbon::parse(request('end_date'))->isoFormat('D MMMM Y') }}</p>
+        @elseif(request('date'))
             <p>Tanggal: {{ \Carbon\Carbon::parse(request('date'))->isoFormat('D MMMM Y') }}</p>
         @elseif(request('month'))
             <p>Bulan: {{ \Carbon\Carbon::parse(request('month'))->isoFormat('MMMM Y') }}</p>

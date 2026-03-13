@@ -17,6 +17,14 @@ class PelayananKeprotokolanController extends Controller
      */
     public function index(Request $request)
     {
+        // Update last read for superadmin notification badge
+        if (Auth::check() && Auth::user()->role === 'super_admin') {
+            \App\Models\ModuleRead::updateOrCreate(
+            ['id_user' => Auth::id(), 'module_name' => 'pelayanan-keprotokolan'],
+            ['last_read_at' => now()]
+            );
+        }
+
         // 1. Initial Query (Hanya memuat relasi asli, Accessor JSON akan dimuat otomatis di view)
         $query = PelayananKeprotokolan::with(['jenisPelayanan']);
 
@@ -24,15 +32,18 @@ class PelayananKeprotokolanController extends Controller
         $applyFilter = function ($q) use ($request) {
             if ($request->filled('start_date') && $request->filled('end_date')) {
                 $q->whereBetween('tanggal_kegiatan', [$request->start_date, $request->end_date]);
-            } elseif ($request->filled('month')) {
+            }
+            elseif ($request->filled('month')) {
                 try {
                     $date = \Carbon\Carbon::parse($request->month);
                     $q->whereYear('tanggal_kegiatan', $date->year)
                         ->whereMonth('tanggal_kegiatan', $date->month);
-                } catch (\Exception $e) {
-                    // Fallback or ignore invalid date
                 }
-            } elseif ($request->filled('year')) {
+                catch (\Exception $e) {
+                // Fallback or ignore invalid date
+                }
+            }
+            elseif ($request->filled('year')) {
                 $q->whereYear('tanggal_kegiatan', $request->year);
             }
 
@@ -40,11 +51,12 @@ class PelayananKeprotokolanController extends Controller
             if ($request->filled('search')) {
                 $search = $request->search;
                 $q->where(function ($sub) use ($search) {
-                    $sub->where('nama_kegiatan', 'like', "%{$search}%")
-                        ->orWhere('tempat', 'like', "%{$search}%")
-                        ->orWhereHas('jenisPelayanan', function ($q) use ($search) {
-                            $q->where('nama_jenis', 'like', "%{$search}%");
-                        });
+                            $sub->where('nama_kegiatan', 'like', "%{$search}%")
+                                ->orWhere('tempat', 'like', "%{$search}%")
+                                ->orWhereHas('jenisPelayanan', function ($q) use ($search) {
+                        $q->where('nama_jenis', 'like', "%{$search}%");
+                    }
+                    );
 
                     // Search names in JSON field id_anggota
                     $matchingAnggotaIds = MasterAnggotaDewan::where('nama', 'like', "%{$search}%")
@@ -61,7 +73,8 @@ class PelayananKeprotokolanController extends Controller
                         $sub->orWhereJsonContains('id_petugas', (string)$id)
                             ->orWhereJsonContains('id_petugas', (int)$id);
                     }
-                });
+                }
+                );
             }
         };
 
@@ -71,12 +84,63 @@ class PelayananKeprotokolanController extends Controller
         // 3. Summary Cards Data (Filtered)
         $totalKegiatan = $query->count();
 
+        // Calculate breakdown for Total Kegiatan card
+        $totalRecords = (clone $query)->get(['id_anggota']);
+        $totalAnggotaCounts = [];
+        foreach ($totalRecords as $record) {
+            $ids = $record->id_anggota;
+            if (!is_array($ids)) {
+                $ids = json_decode($ids, true);
+            }
+            foreach ((array)$ids as $id) {
+                if ($id) {
+                    $totalAnggotaCounts[$id] = ($totalAnggotaCounts[$id] ?? 0) + 1;
+                }
+            }
+        }
+        arsort($totalAnggotaCounts);
+        $totalTopIds = array_slice(array_keys($totalAnggotaCounts), 0, 5);
+        $totalBreakdown = \App\Models\MasterAnggotaDewan::whereIn('id_anggota', $totalTopIds)->get()->map(function($a) use ($totalAnggotaCounts) {
+            return [
+                'label' => explode(',', $a->nama)[0],
+                'value' => $totalAnggotaCounts[$a->id_anggota]
+            ];
+        })->sortByDesc('value')->values();
+
         $jenisPelayananSummary = MasterJenisPelayanan::withCount([
             'pelayananKeprotokolan as total' => function ($q) use ($applyFilter) {
                 $applyFilter($q);
             }
         ])->get()
-        ->map(function ($jenis) {
+        ->map(function ($jenis) use ($applyFilter) {
+            // Calculate Anggota Dewan Breakdown for this category
+            $records = \App\Models\PelayananKeprotokolan::where('id_jenis_pelayanan', $jenis->id_jenis_pelayanan);
+            $applyFilter($records);
+            $records = $records->get(['id_anggota']);
+
+            $anggotaCounts = [];
+            foreach ($records as $record) {
+                $ids = $record->id_anggota;
+                if (!is_array($ids)) {
+                    $ids = json_decode($ids, true);
+                }
+                foreach ((array)$ids as $id) {
+                    if ($id) {
+                        $anggotaCounts[$id] = ($anggotaCounts[$id] ?? 0) + 1;
+                    }
+                }
+            }
+            arsort($anggotaCounts);
+            $topIds = array_slice(array_keys($anggotaCounts), 0, 5);
+            $topAnggota = \App\Models\MasterAnggotaDewan::whereIn('id_anggota', $topIds)->get()->map(function($a) use ($anggotaCounts) {
+                return [
+                    'label' => explode(',', $a->nama)[0],
+                    'value' => $anggotaCounts[$a->id_anggota]
+                ];
+            })->sortByDesc('value')->values();
+
+            $jenis->breakdown = $topAnggota;
+
             $colors = [
                 ['bg' => 'bg-gradient-to-br from-blue-50 to-blue-100', 'border' => 'border-blue-100', 'icon_bg' => 'from-blue-500 to-blue-600', 'shadow' => 'shadow-blue-500/30', 'text' => 'text-blue-600', 'chip_bg' => 'bg-blue-100'],
                 ['bg' => 'bg-gradient-to-br from-red-50 to-red-100', 'border' => 'border-red-100', 'icon_bg' => 'from-red-500 to-red-600', 'shadow' => 'shadow-red-500/30', 'text' => 'text-red-600', 'chip_bg' => 'bg-red-100'],
@@ -87,20 +151,20 @@ class PelayananKeprotokolanController extends Controller
                 ['bg' => 'bg-gradient-to-br from-teal-50 to-teal-100', 'border' => 'border-teal-100', 'icon_bg' => 'from-teal-500 to-teal-600', 'shadow' => 'shadow-teal-500/30', 'text' => 'text-teal-600', 'chip_bg' => 'bg-teal-100'],
                 ['bg' => 'bg-gradient-to-br from-pink-50 to-pink-100', 'border' => 'border-pink-100', 'icon_bg' => 'from-pink-500 to-pink-600', 'shadow' => 'shadow-pink-500/30', 'text' => 'text-pink-600', 'chip_bg' => 'bg-pink-100'],
             ];
-            
+
             $colorIndex = ($jenis->id_jenis_pelayanan - 1) % count($colors);
             $jenis->style = $colors[$colorIndex];
-            
+
             $jenis->label = match ($jenis->nama_jenis) {
-                'Sidang Kabinet' => 'Sidang',
-                'Pelayanan Keprotokolan Bandara' => 'Bandara',
-                'Pelayanan Keprotokolan Acara Dalam Kota' => 'Lokal',
-                'Audiensi Dengan Pimpinan DPRD' => 'Audiensi',
-                'Audiensi Kepada RI 1' => 'Aud. RI 1',
-                'Audiensi Kepada RI 2' => 'Aud. RI 2',
-                'Penerimaan Kunjungan Kerja' => 'Kunjungan',
-                default => 'Umum',
-            };
+                    'Sidang Kabinet' => 'Sidang',
+                    'Pelayanan Keprotokolan Bandara' => 'Bandara',
+                    'Pelayanan Keprotokolan Acara Dalam Kota' => 'Lokal',
+                    'Audiensi Dengan Pimpinan DPRD' => 'Audiensi',
+                    'Audiensi Kepada RI 1' => 'Aud. RI 1',
+                    'Audiensi Kepada RI 2' => 'Aud. RI 2',
+                    'Penerimaan Kunjungan Kerja' => 'Kunjungan',
+                    default => 'Umum',
+                };
 
             return $jenis;
         });
@@ -114,7 +178,7 @@ class PelayananKeprotokolanController extends Controller
         if ($request->has('export')) {
             $kegiatan = $query->get();
             $columns = $request->input('columns', []);
-            
+
             if (empty($columns)) {
                 $columns = ['tanggal', 'waktu', 'nama_kegiatan', 'jenis_pelayanan', 'anggota_dewan', 'tempat'];
             }
@@ -124,8 +188,8 @@ class PelayananKeprotokolanController extends Controller
                 return response(view('pelayanan-keprotokolan.excel', compact('kegiatan', 'columns')))
                     ->header('Content-Type', 'application/vnd.ms-excel')
                     ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"');
-            } 
-            
+            }
+
             if ($request->export == 'pdf') {
                 $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pelayanan-keprotokolan.pdf', compact('kegiatan', 'columns'));
                 $pdf->setPaper('a4', 'landscape');
@@ -139,6 +203,7 @@ class PelayananKeprotokolanController extends Controller
         return view('pelayanan-keprotokolan.index', compact(
             'kegiatan',
             'totalKegiatan',
+            'totalBreakdown',
             'totalProtokol',
             'jenisPelayananSummary'
         ));

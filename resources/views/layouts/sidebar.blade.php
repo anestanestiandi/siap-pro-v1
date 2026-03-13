@@ -42,11 +42,21 @@
             class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition
                   {{ request()->routeIs('pelayanan-keprotokolan') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white' }}"
             :class="desktopSidebarOpen ? '' : 'justify-center'">
-            <svg class="w-5 h-5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z" />
-            </svg>
+            <div class="relative">
+                <svg class="w-5 h-5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z" />
+                </svg>
+                @if(Auth::user()->role === 'super_admin' && ($moduleCounts['pelayanan-keprotokolan'] ?? 0) > 0)
+                    <span class="absolute -top-2 -right-2 flex h-5 min-w-[20px]">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span class="relative flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white border-2 border-[#3B5286]">
+                            {{ $moduleCounts['pelayanan-keprotokolan'] }}
+                        </span>
+                    </span>
+                @endif
+            </div>
             <span x-show="desktopSidebarOpen" class="transition-all duration-300">Pelayanan Keprotokolan</span>
         </a>
 
@@ -55,11 +65,21 @@
             class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition
                   {{ request()->routeIs('persidangan*') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white' }}"
             :class="desktopSidebarOpen ? '' : 'justify-center'">
-            <svg class="w-5 h-5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
-            </svg>
+            <div class="relative">
+                <svg class="w-5 h-5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                </svg>
+                @if(Auth::user()->role === 'super_admin' && ($moduleCounts['persidangan'] ?? 0) > 0)
+                    <span class="absolute -top-2 -right-2 flex h-5 min-w-[20px]">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span class="relative flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white border-2 border-[#3B5286]">
+                            {{ $moduleCounts['persidangan'] }}
+                        </span>
+                    </span>
+                @endif
+            </div>
             <span x-show="desktopSidebarOpen" class="transition-all duration-300">Persidangan</span>
         </a>
 
@@ -68,12 +88,22 @@
             class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition
                   {{ request()->routeIs('kunjungan-kerja') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white' }}"
             :class="desktopSidebarOpen ? '' : 'justify-center'">
-            <svg class="w-5 h-5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
-            </svg>
-            <span x-show="desktopSidebarOpen" class="transition-all duration-300">Kunjungan Kerja</span>
+            <div class="relative">
+                <svg class="w-5 h-5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                </svg>
+                @if(Auth::user()->role === 'super_admin' && ($moduleCounts['kunjungan-kerja'] ?? 0) > 0)
+                    <span class="absolute -top-2 -right-2 flex h-5 min-w-[20px]">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span class="relative flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white border-2 border-[#3B5286]">
+                            {{ $moduleCounts['kunjungan-kerja'] }}
+                        </span>
+                    </span>
+                @endif
+            </div>
+            <span x-show="desktopSidebarOpen" class="transition-all duration-300 flex-1">Kunjungan Kerja</span>
         </a>
 
         {{-- Administrasi Perjalanan Dinas --}}
@@ -81,11 +111,21 @@
             class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition
                   {{ request()->routeIs('administrasi-perjalanan-dinas') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white' }}"
             :class="desktopSidebarOpen ? '' : 'justify-center'">
-            <svg class="w-5 h-5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
-            </svg>
+            <div class="relative">
+                <svg class="w-5 h-5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+                </svg>
+                @if(Auth::user()->role === 'super_admin' && ($moduleCounts['administrasi-perjalanan-dinas'] ?? 0) > 0)
+                    <span class="absolute -top-2 -right-2 flex h-5 min-w-[20px]">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span class="relative flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white border-2 border-[#3B5286]">
+                            {{ $moduleCounts['administrasi-perjalanan-dinas'] }}
+                        </span>
+                    </span>
+                @endif
+            </div>
             <span x-show="desktopSidebarOpen" class="transition-all duration-300">Administrasi Perjalanan Dinas</span>
         </a>
 

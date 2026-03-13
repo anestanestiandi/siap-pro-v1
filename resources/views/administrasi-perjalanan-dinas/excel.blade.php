@@ -27,7 +27,7 @@
             <tr>
                 <td>{{ $loop->iteration }}</td>
                 @if(in_array('tanggal', $columns))
-                    <td>
+                    <td style="vnd.ms-excel.numberformat:@">
                         @if($item->tanggal_mulai == $item->tanggal_selesai)
                             {{ \Carbon\Carbon::parse($item->tanggal_mulai)->isoFormat('D MMMM Y') }}
                         @else
@@ -36,7 +36,7 @@
                     </td>
                 @endif
                 @if(in_array('waktu', $columns))
-                    <td>{{ $item->waktu ? \Carbon\Carbon::parse($item->waktu)->format('H:i') . ' WIB' : '-' }}</td>
+                    <td style="vnd.ms-excel.numberformat:@">{{ $item->waktu ? \Carbon\Carbon::parse($item->waktu)->format('H:i') . ' WIB' : '-' }}</td>
                 @endif
                 @if(in_array('nama_kegiatan', $columns))
                     <td>{{ $item->nama_kegiatan }}</td>

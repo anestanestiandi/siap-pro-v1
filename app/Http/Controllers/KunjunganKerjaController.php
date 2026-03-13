@@ -20,6 +20,14 @@ class KunjunganKerjaController extends Controller
      */
     public function index(Request $request)
     {
+        // Update last read for superadmin notification badge
+        if (Auth::check() && Auth::user()->role === 'super_admin') {
+            \App\Models\ModuleRead::updateOrCreate(
+                ['id_user' => Auth::id(), 'module_name' => 'kunjungan-kerja'],
+                ['last_read_at' => now()]
+            );
+        }
+
         // 1. Initial Query
         $query = KunjunganKerja::with(['jenisKunjungan', 'provinsi']);
 
@@ -79,6 +87,29 @@ class KunjunganKerjaController extends Controller
         // 3. Summary Cards Data (Filtered)
         $totalKegiatan = $query->count();
 
+        // Calculate breakdown for Total Kegiatan card
+        $totalRecords = (clone $query)->get(['id_anggota']);
+        $totalAnggotaCounts = [];
+        foreach ($totalRecords as $record) {
+            $ids = $record->id_anggota;
+            if (!is_array($ids)) {
+                $ids = json_decode($ids, true);
+            }
+            foreach ((array)$ids as $id) {
+                if ($id) {
+                    $totalAnggotaCounts[$id] = ($totalAnggotaCounts[$id] ?? 0) + 1;
+                }
+            }
+        }
+        arsort($totalAnggotaCounts);
+        $totalTopIds = array_slice(array_keys($totalAnggotaCounts), 0, 5);
+        $totalBreakdown = \App\Models\MasterAnggotaDewan::whereIn('id_anggota', $totalTopIds)->get()->map(function($a) use ($totalAnggotaCounts) {
+            return [
+                'label' => explode(',', $a->nama)[0],
+                'value' => $totalAnggotaCounts[$a->id_anggota]
+            ];
+        })->sortByDesc('value')->values();
+
         $jenisKunjunganSummaryRaw = MasterJenisKunjungan::withCount([
             'kunjunganKerja as total' => function ($q) use ($applyFilter) {
                 $applyFilter($q);
@@ -92,7 +123,7 @@ class KunjunganKerjaController extends Controller
                 $name = strtolower($jenis->nama_jenis);
                 if (str_contains($name, 'pendampingan')) return false;
                 return true;
-            })->map(function ($jenis) {
+            })->map(function ($jenis) use ($applyFilter) {
                 $name = strtolower($jenis->nama_jenis);
                 
                 $key = $jenis->nama_jenis;
@@ -110,15 +141,47 @@ class KunjunganKerjaController extends Controller
                     $style = ['bg' => 'bg-gradient-to-br from-red-50 to-red-100', 'border' => 'border-red-200', 'icon_bg' => 'from-red-500 to-red-600', 'shadow' => 'shadow-red-500/30', 'text' => 'text-red-600', 'chip_bg' => 'bg-red-100']; // Foreign Red
                 }
 
+                // Add breakdown for external view too (if needed, or empty if privacy concerns)
+                $jenis->breakdown = collect(); // Or calculate if allowed
+
                 return (object) [
                     'nama_jenis' => $key,
                     'total' => $totalCount,
                     'label' => str_contains(strtolower($key), 'luar negeri') ? 'Luar Negeri' : 'Dalam Negeri',
-                    'style' => $style
+                    'style' => $style,
+                    'breakdown' => collect() // Keep empty for external
                 ];
             })->values();
         } else {
-            $jenisKunjunganSummary = $jenisKunjunganSummaryRaw->map(function ($jenis) {
+            $jenisKunjunganSummary = $jenisKunjunganSummaryRaw->map(function ($jenis) use ($applyFilter) {
+                // Calculate Anggota Dewan Breakdown for this category
+                $records = \App\Models\KunjunganKerja::where('id_jenis_kunjungan', $jenis->id_jenis_kunjungan);
+                $applyFilter($records);
+                $records = $records->get(['id_anggota']);
+
+                $anggotaCounts = [];
+                foreach ($records as $record) {
+                    $ids = $record->id_anggota;
+                    if (!is_array($ids)) {
+                        $ids = json_decode($ids, true);
+                    }
+                    foreach ((array)$ids as $id) {
+                        if ($id) {
+                            $anggotaCounts[$id] = ($anggotaCounts[$id] ?? 0) + 1;
+                        }
+                    }
+                }
+                arsort($anggotaCounts);
+                $topIds = array_slice(array_keys($anggotaCounts), 0, 5);
+                $topAnggota = \App\Models\MasterAnggotaDewan::whereIn('id_anggota', $topIds)->get()->map(function($a) use ($anggotaCounts) {
+                    return [
+                        'label' => explode(',', $a->nama)[0],
+                        'value' => $anggotaCounts[$a->id_anggota]
+                    ];
+                })->sortByDesc('value')->values();
+
+                $jenis->breakdown = $topAnggota;
+
                 $colors = [
                     ['bg' => 'bg-gradient-to-br from-blue-50 to-blue-100', 'border' => 'border-blue-200', 'icon_bg' => 'from-blue-500 to-blue-600', 'shadow' => 'shadow-blue-500/30', 'text' => 'text-blue-600', 'chip_bg' => 'bg-blue-100'],
                     ['bg' => 'bg-gradient-to-br from-red-50 to-red-100', 'border' => 'border-red-200', 'icon_bg' => 'from-red-500 to-red-600', 'shadow' => 'shadow-red-500/30', 'text' => 'text-red-600', 'chip_bg' => 'bg-red-100'],
@@ -170,8 +233,10 @@ class KunjunganKerjaController extends Controller
         return view('kunjungan-kerja.index', compact(
             'kunjungan',
             'totalKegiatan',
+            'totalBreakdown',
             'totalProtokol',
-            'jenisKunjunganSummary'
+            'jenisKunjunganSummary',
+            'isEksternal'
         ));
     }
 

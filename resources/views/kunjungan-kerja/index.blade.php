@@ -32,6 +32,14 @@
             const x = e.pageX - this.$refs.scrollContainer.offsetLeft;
             const walk = (x - this.startX) * 2; // Scroll-fast
             this.$refs.scrollContainer.scrollLeft = this.scrollLeft - walk;
+        },
+        scroll(direction) {
+            const container = this.$refs.scrollContainer;
+            const scrollAmount = 300;
+            container.scrollBy({
+                left: direction === 'left' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth'
+            });
         }
     }">
 
@@ -54,16 +62,30 @@
                     </div>
                 @endfor
             </div>
-            <div x-show="!loading" x-cloak x-transition:enter="transition ease-out duration-500"
-                x-transition:enter-start="opacity-0 transform scale-95"
-                x-transition:enter-end="opacity-100 transform scale-100" x-ref="scrollContainer"
-                @mousedown="handleMouseDown" @mouseleave="handleMouseLeave" @mouseup="handleMouseUp"
-                @mousemove="handleMouseMove"
-                class="flex overflow-x-auto pb-4 gap-4 no-scrollbar cursor-grab active:cursor-grabbing select-none">
+            <div x-show="!loading" x-cloak class="relative group">
+                {{-- Side Navigation Buttons (Netflix Style) --}}
+                <div class="absolute left-0 top-0 bottom-4 w-12 z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-gray-100/30 to-transparent rounded-l-xl"></div>
+                <button @click="scroll('left')" 
+                    class="absolute left-0 top-1/2 -translate-y-1/2 z-30 ml-2 w-8 h-8 rounded-full bg-white/90 shadow-md border border-gray-100 flex items-center justify-center text-blue-600 opacity-0 group-hover:opacity-100 hover:scale-110 transition-all duration-300">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                </button>
 
-                {{-- 1. Total Kegiatan (Biru) --}}
-                <div
-                    class="w-60 flex-shrink-0 bg-gradient-to-br from-blue-100 to-blue-200/50 rounded-xl p-3 border border-blue-200 flex justify-between hover:shadow-md transition">
+                <div class="absolute right-0 top-0 bottom-4 w-12 z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-l from-gray-100/30 to-transparent rounded-r-xl"></div>
+                <button @click="scroll('right')" 
+                    class="absolute right-0 top-1/2 -translate-y-1/2 z-30 mr-2 w-8 h-8 rounded-full bg-white/90 shadow-md border border-gray-100 flex items-center justify-center text-blue-600 opacity-0 group-hover:opacity-100 hover:scale-110 transition-all duration-300">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                </button>
+
+                <div x-transition:enter="transition ease-out duration-500"
+                    x-transition:enter-start="opacity-0 transform scale-95"
+                    x-transition:enter-end="opacity-100 transform scale-100" x-ref="scrollContainer"
+                    @mousedown="handleMouseDown" @mouseleave="handleMouseLeave" @mouseup="handleMouseUp"
+                    @mousemove="handleMouseMove"
+                    class="flex overflow-x-auto pb-4 gap-4 no-scrollbar cursor-grab active:cursor-grabbing select-none">
+
+                {{-- 1. Total Kunjungan (Biru) --}}
+                <div x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false"
+                    class="relative w-60 flex-shrink-0 bg-gradient-to-br from-blue-100 to-blue-200/50 rounded-xl p-3 border border-blue-200 flex justify-between hover:shadow-md transition">
                     <div>
                         <div
                             class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30 mb-3">
@@ -76,24 +98,48 @@
                         <div class="text-2xl font-bold text-gray-900">{{ number_format($totalKegiatan) }}</div>
                         <div class="text-sm text-gray-500 mt-1">
                             Total Kunjungan
-                            @if(request('start_date') && request('end_date'))
-                                <span class="font-medium text-blue-600 block sm:inline">
-                                    ({{ \Carbon\Carbon::parse(request('start_date'))->isoFormat('D MMM') }} - {{ \Carbon\Carbon::parse(request('end_date'))->isoFormat('D MMM Y') }})
-                                </span>
-                            @elseif(request('month'))
-                                <span
-                                    class="font-medium text-blue-600 block sm:inline">({{ \Carbon\Carbon::parse(request('month'))->isoFormat('MMMM Y') }})</span>
-                            @elseif(request('year'))
-                                <span class="font-medium text-blue-600 block sm:inline">({{ request('year') }})</span>
-                            @endif
+                        </div>
+                    </div>
+
+
+
+                    {{-- Popover Breakdown --}}
+                    <div x-show="open" x-cloak 
+                        x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 translate-y-2"
+                        x-transition:enter-end="opacity-100 translate-y-0"
+                        class="absolute z-[100] top-full mt-2 left-0 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 transform origin-top">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Top Anggota Dewan</h4>
+                            <span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Total {{ $totalKegiatan }}</span>
+                        </div>
+                        <div class="space-y-2">
+                            @forelse($totalBreakdown as $b)
+                                <div class="flex items-center gap-3">
+                                    <div class="flex-1">
+                                        <div class="flex justify-between mb-1">
+                                            <span class="text-[10px] font-bold text-gray-700 truncate w-32">{{ $b['label'] }}</span>
+                                            <span class="text-[10px] font-black text-blue-600">{{ $b['value'] }}</span>
+                                        </div>
+                                        <div class="w-full bg-gray-50 rounded-full h-1.5 overflow-hidden border border-gray-100">
+                                            <div class="bg-blue-500 h-full rounded-full transition-all duration-1000" style="width: {{ $totalKegiatan > 0 ? ($b['value'] / $totalKegiatan) * 100 : 0 }}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="text-[10px] text-gray-400 text-center py-2">Tidak ada data breakdown</p>
+                            @endforelse
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-gray-50 flex justify-center">
+                            <p class="text-[9px] font-semibold text-gray-400 italic">Berdasarkan Filter Saat Ini</p>
                         </div>
                     </div>
                 </div>
 
                 {{-- 2. Dynamic Jenis Kunjungan Cards --}}
                 @foreach($jenisKunjunganSummary as $jenis)
-                    <div
-                        class="w-60 flex-shrink-0 {{ $jenis->style['bg'] }} rounded-xl p-3 border {{ $jenis->style['border'] }} flex justify-between hover:shadow-md transition">
+                    <div x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false"
+                        class="relative w-60 flex-shrink-0 {{ $jenis->style['bg'] }} rounded-xl p-3 border {{ $jenis->style['border'] }} flex justify-between hover:shadow-md transition">
                         <div>
                             <div
                                 class="w-10 h-10 rounded-lg bg-gradient-to-br {{ $jenis->style['icon_bg'] }} flex items-center justify-center text-white shadow-lg {{ $jenis->style['shadow'] }} mb-3">
@@ -110,10 +156,49 @@
                                 {{ $jenis->nama_jenis }}
                             </div>
                         </div>
-                        <div class="self-start">
+                        <div class="flex flex-col justify-between items-end">
                             <span
                                 class="text-xs font-medium {{ $jenis->style['text'] }} {{ $jenis->style['chip_bg'] }} px-2 py-1 rounded">{{ $jenis->label }}</span>
+                            
+                            @if(count($jenis->breakdown ?? []) > 0)
+
+                            @endif
                         </div>
+
+                        {{-- Popover Breakdown --}}
+                        @if(count($jenis->breakdown ?? []) > 0)
+                        <div x-show="open" x-cloak 
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 translate-y-2"
+                            x-transition:enter-end="opacity-100 translate-y-0"
+                            class="absolute z-[100] top-full mt-2 left-0 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 transform origin-top">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Top Anggota Dewan</h4>
+                                <span class="text-[10px] font-bold {{ $jenis->style['text'] }} {{ $jenis->style['chip_bg'] }} px-2 py-0.5 rounded-full">Total {{ $jenis->total }}</span>
+                            </div>
+                            <div class="space-y-2">
+                                @forelse($jenis->breakdown as $b)
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex-1">
+                                            <div class="flex justify-between mb-1">
+                                                <span class="text-[10px] font-bold text-gray-700 truncate w-32">{{ $b['label'] }}</span>
+                                                <span class="text-[10px] font-black {{ $jenis->style['text'] }}">{{ $b['value'] }}</span>
+                                            </div>
+                                            <div class="w-full bg-gray-50 rounded-full h-1.5 overflow-hidden border border-gray-100">
+                                                <div class="h-full rounded-full transition-all duration-1000" 
+                                                    style="width: {{ $jenis->total > 0 ? ($b['value'] / $jenis->total) * 100 : 0 }}%; background-color: currentColor; color: {{ str_replace('text-', '', $jenis->style['text']) }}"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="text-[10px] text-gray-400 text-center py-2">Tidak ada data breakdown</p>
+                                @endforelse
+                            </div>
+                            <div class="mt-4 pt-3 border-t border-gray-50 flex justify-center">
+                                <p class="text-[9px] font-semibold text-gray-400 italic">Berdasarkan Filter Saat Ini</p>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 @endforeach
 
@@ -131,6 +216,7 @@
                 </div>
 
             </div>
+        </div>
 
         <div x-data="{ 
                 showDeleteModal: false, 
@@ -305,9 +391,11 @@
                                         {{-- Preserve filters --}}
                                         @if(request('start_date')) <input type="hidden" name="start_date" value="{{ request('start_date') }}"> @endif
                                         @if(request('end_date')) <input type="hidden" name="end_date" value="{{ request('end_date') }}"> @endif
+                                        @if(request('date')) <input type="hidden" name="date" value="{{ request('date') }}"> @endif
                                         @if(request('month')) <input type="hidden" name="month" value="{{ request('month') }}"> @endif
                                         @if(request('year')) <input type="hidden" name="year" value="{{ request('year') }}"> @endif
                                         @if(request('search')) <input type="hidden" name="search" value="{{ request('search') }}"> @endif
+                                        <input type="hidden" name="export" x-model="exportFormat">
 
                                         <div class="p-5 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
                                             {{-- Info Alert --}}
@@ -368,7 +456,7 @@
                                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     {{-- PDF --}}
                                                     <label class="relative group cursor-pointer">
-                                                        <input type="radio" name="export" value="pdf" x-model="exportFormat" class="peer sr-only">
+                                                        <input type="radio" value="pdf" x-model="exportFormat" class="peer sr-only">
                                                         <div class="p-4 rounded-xl border-2 transition-all flex flex-col items-center text-center gap-3 peer-checked:border-blue-600 peer-checked:bg-blue-50/50 border-gray-200 hover:border-gray-300">
                                                             <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 mb-1">
                                                                 <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -389,7 +477,7 @@
 
                                                     {{-- Excel --}}
                                                     <label class="relative group cursor-pointer">
-                                                        <input type="radio" name="export" value="excel" x-model="exportFormat" class="peer sr-only">
+                                                        <input type="radio" value="excel" x-model="exportFormat" class="peer sr-only">
                                                         <div class="p-4 rounded-xl border-2 transition-all flex flex-col items-center text-center gap-3 peer-checked:border-green-600 peer-checked:bg-green-50/50 border-gray-200 hover:border-gray-300">
                                                             <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 mb-1">
                                                                 <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">

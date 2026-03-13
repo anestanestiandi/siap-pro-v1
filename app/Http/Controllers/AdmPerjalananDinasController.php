@@ -13,6 +13,14 @@ class AdmPerjalananDinasController extends Controller
      */
     public function index(Request $request)
     {
+        // Update last read for superadmin notification badge
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->role === 'super_admin') {
+            \App\Models\ModuleRead::updateOrCreate(
+                ['id_user' => \Illuminate\Support\Facades\Auth::id(), 'module_name' => 'administrasi-perjalanan-dinas'],
+                ['last_read_at' => now()]
+            );
+        }
+
         $query = \App\Models\AdministrasiPerjalananDinas::query();
         
         // Eager load relationships
@@ -60,13 +68,63 @@ class AdmPerjalananDinasController extends Controller
         // Summary Cards Data
         $totalKegiatan = $query->count();
 
+        // Calculate breakdown for Total Kegiatan card (by pelaksana)
+        $totalRecords = (clone $query)->get(['pelaksana']);
+        $totalPelaksanaCounts = [];
+        foreach ($totalRecords as $record) {
+            $name = $record->pelaksana;
+            if ($name) {
+                // Split multi-name pelaksana if needed, but here we just take as is or split by comma
+                $names = array_map('trim', explode(',', $name));
+                foreach ($names as $n) {
+                    if ($n) {
+                        $totalPelaksanaCounts[$n] = ($totalPelaksanaCounts[$n] ?? 0) + 1;
+                    }
+                }
+            }
+        }
+        arsort($totalPelaksanaCounts);
+        $totalBreakdown = collect(array_slice($totalPelaksanaCounts, 0, 5, true))->map(function($count, $name) {
+            return [
+                'label' => $name,
+                'value' => $count
+            ];
+        })->values();
+
         // Count per Jenis Perjalanan
         $jenisPerjalananSummary = \App\Models\MasterJenisPerjalananDinas::withCount([
             'admPerjalananDinas as total' => function ($q) use ($applyFilter) {
                 $applyFilter($q);
             }
         ])->get()
-        ->map(function ($jenis) {
+        ->map(function ($jenis) use ($applyFilter) {
+            // Calculate Pelaksana Breakdown for this category
+            $records = \App\Models\AdministrasiPerjalananDinas::where('id_jenis_perjalanan_dinas', $jenis->id_jenis_perjalanan);
+            $applyFilter($records);
+            $records = $records->get(['pelaksana']);
+
+            $pelaksanaCounts = [];
+            foreach ($records as $record) {
+                $name = $record->pelaksana;
+                if ($name) {
+                    $names = array_map('trim', explode(',', $name));
+                    foreach ($names as $n) {
+                        if ($n) {
+                            $pelaksanaCounts[$n] = ($pelaksanaCounts[$n] ?? 0) + 1;
+                        }
+                    }
+                }
+            }
+            arsort($pelaksanaCounts);
+            $topPelaksana = collect(array_slice($pelaksanaCounts, 0, 5, true))->map(function($count, $name) {
+                return [
+                    'label' => $name,
+                    'value' => $count
+                ];
+            })->values();
+
+            $jenis->breakdown = $topPelaksana;
+
             $colors = [
                 ['bg' => 'bg-gradient-to-br from-green-50 to-green-100', 'border' => 'border-green-100', 'icon_bg' => 'from-green-500 to-green-600', 'shadow' => 'shadow-green-500/30', 'text' => 'text-green-600', 'chip_bg' => 'bg-green-100'],
                 ['bg' => 'bg-gradient-to-br from-amber-50 to-amber-100', 'border' => 'border-amber-100', 'icon_bg' => 'from-amber-500 to-amber-600', 'shadow' => 'shadow-amber-500/30', 'text' => 'text-amber-600', 'chip_bg' => 'bg-amber-100'],
@@ -118,7 +176,13 @@ class AdmPerjalananDinasController extends Controller
 
         $kegiatan = $query->paginate(10)->onEachSide(1)->withQueryString();
 
-        return view('administrasi-perjalanan-dinas.index', compact('kegiatan', 'totalKegiatan', 'jenisPerjalananSummary', 'totalProtokol'));
+        return view('administrasi-perjalanan-dinas.index', compact(
+            'kegiatan',
+            'totalKegiatan',
+            'totalBreakdown',
+            'jenisPerjalananSummary',
+            'totalProtokol'
+        ));
     }
 
     /**

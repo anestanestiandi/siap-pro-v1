@@ -30,10 +30,10 @@
             <tr>
                 <td>{{ $loop->iteration }}</td>
                 @if(in_array('tanggal', $columns))
-                    <td>{{ \Carbon\Carbon::parse($item->tanggal_kunjungan)->isoFormat('D MMMM Y') }}</td>
+                    <td style="vnd.ms-excel.numberformat:@">{{ \Carbon\Carbon::parse($item->tanggal_kunjungan)->isoFormat('D MMMM Y') }}</td>
                 @endif
                 @if(in_array('waktu', $columns))
-                    <td>{{ $item->waktu ? \Carbon\Carbon::parse($item->waktu)->format('H:i') . ' WIB' : '-' }}</td>
+                    <td style="vnd.ms-excel.numberformat:@">{{ $item->waktu ? \Carbon\Carbon::parse($item->waktu)->format('H:i') . ' WIB' : '-' }}</td>
                 @endif
                 @if(in_array('anggota_dewan', $columns))
                     <td>{{ $item->anggotaDewan->count() > 0 ? $item->anggotaDewan->pluck('nama')->implode(', ') : '-' }}</td>

@@ -17,6 +17,14 @@ class PersidanganController extends Controller
      */
     public function index(Request $request)
     {
+        // Update last read for superadmin notification badge
+        if (Auth::check() && Auth::user()->role === 'super_admin') {
+            \App\Models\ModuleRead::updateOrCreate(
+            ['id_user' => Auth::id(), 'module_name' => 'persidangan'],
+            ['last_read_at' => now()]
+            );
+        }
+
         // 1. Initial Query
         $query = Persidangan::with(['jenisPersidangan']);
 
@@ -24,15 +32,18 @@ class PersidanganController extends Controller
         $applyFilter = function ($q) use ($request) {
             if ($request->filled('start_date') && $request->filled('end_date')) {
                 $q->whereBetween('tanggal_persidangan', [$request->start_date, $request->end_date]);
-            } elseif ($request->filled('month')) {
+            }
+            elseif ($request->filled('month')) {
                 try {
                     $date = \Carbon\Carbon::parse($request->month);
                     $q->whereYear('tanggal_persidangan', $date->year)
                         ->whereMonth('tanggal_persidangan', $date->month);
-                } catch (\Exception $e) {
-                    // Fallback or ignore invalid date
                 }
-            } elseif ($request->filled('year')) {
+                catch (\Exception $e) {
+                // Fallback or ignore invalid date
+                }
+            }
+            elseif ($request->filled('year')) {
                 $q->whereYear('tanggal_persidangan', $request->year);
             }
 
@@ -40,11 +51,12 @@ class PersidanganController extends Controller
             if ($request->filled('search')) {
                 $search = $request->search;
                 $q->where(function ($sub) use ($search) {
-                    $sub->where('nama_persidangan', 'like', "%{$search}%")
-                        ->orWhere('tempat', 'like', "%{$search}%")
-                        ->orWhereHas('jenisPersidangan', function ($q) use ($search) {
-                            $q->where('nama_jenis', 'like', "%{$search}%");
-                        });
+                            $sub->where('nama_persidangan', 'like', "%{$search}%")
+                                ->orWhere('tempat', 'like', "%{$search}%")
+                                ->orWhereHas('jenisPersidangan', function ($q) use ($search) {
+                        $q->where('nama_jenis', 'like', "%{$search}%");
+                    }
+                    );
 
                     // Search names in JSON field id_anggota
                     $matchingAnggotaIds = MasterAnggotaDewan::where('nama', 'like', "%{$search}%")
@@ -61,7 +73,8 @@ class PersidanganController extends Controller
                         $sub->orWhereJsonContains('id_petugas', (string)$id)
                             ->orWhereJsonContains('id_petugas', (int)$id);
                     }
-                });
+                }
+                );
             }
         };
 
@@ -72,13 +85,64 @@ class PersidanganController extends Controller
         // Count filtered items for "Total Kegiatan" card
         $totalKegiatan = $query->count();
 
+        // Calculate breakdown for Total Kegiatan card
+        $totalRecords = (clone $query)->get(['id_anggota']);
+        $totalAnggotaCounts = [];
+        foreach ($totalRecords as $record) {
+            $ids = $record->id_anggota;
+            if (!is_array($ids)) {
+                $ids = json_decode($ids, true);
+            }
+            foreach ((array)$ids as $id) {
+                if ($id) {
+                    $totalAnggotaCounts[$id] = ($totalAnggotaCounts[$id] ?? 0) + 1;
+                }
+            }
+        }
+        arsort($totalAnggotaCounts);
+        $totalTopIds = array_slice(array_keys($totalAnggotaCounts), 0, 5);
+        $totalBreakdown = \App\Models\MasterAnggotaDewan::whereIn('id_anggota', $totalTopIds)->get()->map(function($a) use ($totalAnggotaCounts) {
+            return [
+                'label' => explode(',', $a->nama)[0],
+                'value' => $totalAnggotaCounts[$a->id_anggota]
+            ];
+        })->sortByDesc('value')->values();
+
         // Count filtered items per "Jenis Persidangan" card
         $jenisPersidanganSummary = MasterJenisPersidangan::withCount([
             'persidangan as total' => function ($q) use ($applyFilter) {
                 $applyFilter($q);
             }
         ])->get()
-        ->map(function ($jenis) {
+        ->map(function ($jenis) use ($applyFilter) {
+            // Calculate Anggota Dewan Breakdown for this category
+            $records = \App\Models\Persidangan::where('id_jenis_persidangan', $jenis->id_jenis_persidangan);
+            $applyFilter($records);
+            $records = $records->get(['id_anggota']);
+
+            $anggotaCounts = [];
+            foreach ($records as $record) {
+                $ids = $record->id_anggota;
+                if (!is_array($ids)) {
+                    $ids = json_decode($ids, true);
+                }
+                foreach ((array)$ids as $id) {
+                    if ($id) {
+                        $anggotaCounts[$id] = ($anggotaCounts[$id] ?? 0) + 1;
+                    }
+                }
+            }
+            arsort($anggotaCounts);
+            $topIds = array_slice(array_keys($anggotaCounts), 0, 5);
+            $topAnggota = \App\Models\MasterAnggotaDewan::whereIn('id_anggota', $topIds)->get()->map(function($a) use ($anggotaCounts) {
+                return [
+                    'label' => explode(',', $a->nama)[0],
+                    'value' => $anggotaCounts[$a->id_anggota]
+                ];
+            })->sortByDesc('value')->values();
+
+            $jenis->breakdown = $topAnggota;
+
             $colors = [
                 ['bg' => 'bg-gradient-to-br from-blue-50 to-blue-100', 'border' => 'border-blue-100', 'icon_bg' => 'from-blue-500 to-blue-600', 'shadow' => 'shadow-blue-500/30', 'text' => 'text-blue-600', 'chip_bg' => 'bg-blue-100'],
                 ['bg' => 'bg-gradient-to-br from-red-50 to-red-100', 'border' => 'border-red-100', 'icon_bg' => 'from-red-500 to-red-600', 'shadow' => 'shadow-red-500/30', 'text' => 'text-red-600', 'chip_bg' => 'bg-red-100'],
@@ -86,22 +150,22 @@ class PersidanganController extends Controller
                 ['bg' => 'bg-gradient-to-br from-purple-50 to-purple-100', 'border' => 'border-purple-100', 'icon_bg' => 'from-purple-500 to-purple-600', 'shadow' => 'shadow-purple-500/30', 'text' => 'text-purple-600', 'chip_bg' => 'bg-purple-100'],
                 ['bg' => 'bg-gradient-to-br from-amber-50 to-amber-100', 'border' => 'border-amber-100', 'icon_bg' => 'from-amber-500 to-amber-600', 'shadow' => 'shadow-amber-500/30', 'text' => 'text-amber-600', 'chip_bg' => 'bg-amber-100'],
             ];
-            
+
             $colorIndex = ($jenis->id_jenis_persidangan - 1) % count($colors);
             $jenis->style = $colors[$colorIndex];
-            
+
             $jenis->label = match ($jenis->nama_jenis) {
-                'Rapat Paripurna' => 'Paripurna',
-                'Rapat Pimpinan' => 'Pimpinan',
-                'Rapat Badan Musyawarah' => 'Bamus',
-                'Rapat Badan Anggaran' => 'Banggar',
-                'Diskusi Terbatas' => 'Diskusi',
-                'Pertemuan Terbatas' => 'Pertemuan',
-                'Sidang Pleno' => 'Pleno',
-                default => (str_starts_with($jenis->nama_jenis, 'Rapat ') 
-                    ? str_replace('Rapat ', '', $jenis->nama_jenis) 
+                    'Rapat Paripurna' => 'Paripurna',
+                    'Rapat Pimpinan' => 'Pimpinan',
+                    'Rapat Badan Musyawarah' => 'Bamus',
+                    'Rapat Badan Anggaran' => 'Banggar',
+                    'Diskusi Terbatas' => 'Diskusi',
+                    'Pertemuan Terbatas' => 'Pertemuan',
+                    'Sidang Pleno' => 'Pleno',
+                    default => (str_starts_with($jenis->nama_jenis, 'Rapat ')
+                    ? str_replace('Rapat ', '', $jenis->nama_jenis)
                     : $jenis->nama_jenis),
-            };
+                };
 
             return $jenis;
         });
@@ -116,7 +180,7 @@ class PersidanganController extends Controller
         if ($request->has('export')) {
             $kegiatan = $query->get();
             $columns = $request->input('columns', []);
-            
+
             // Ensure minimum columns if none selected (fallback)
             if (empty($columns)) {
                 $columns = ['tanggal', 'waktu', 'nama_persidangan', 'jenis_persidangan', 'anggota_dewan', 'tempat'];
@@ -124,12 +188,12 @@ class PersidanganController extends Controller
 
             if ($request->export == 'excel') {
                 $fileName = 'laporan-persidangan-' . now()->format('Y-m-d') . '.xls';
-                
+
                 return response(view('persidangan.excel', compact('kegiatan', 'columns')))
                     ->header('Content-Type', 'application/vnd.ms-excel')
                     ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"');
-            } 
-            
+            }
+
             if ($request->export == 'pdf') {
                 $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('persidangan.pdf', compact('kegiatan', 'columns'));
                 $pdf->setPaper('a4', 'landscape'); // Landscape for better column fit
@@ -143,6 +207,7 @@ class PersidanganController extends Controller
         return view('persidangan.index', compact(
             'kegiatan',
             'totalKegiatan',
+            'totalBreakdown',
             'jenisPersidanganSummary',
             'totalProtokol'
         ));

@@ -17,6 +17,8 @@
         <h1>DAFTAR KEGIATAN KUNJUNGAN KERJA</h1>
         @if(request('start_date') && request('end_date'))
             <p>Periode: {{ \Carbon\Carbon::parse(request('start_date'))->isoFormat('D MMMM Y') }} - {{ \Carbon\Carbon::parse(request('end_date'))->isoFormat('D MMMM Y') }}</p>
+        @elseif(request('date'))
+            <p>Tanggal: {{ \Carbon\Carbon::parse(request('date'))->isoFormat('D MMMM Y') }}</p>
         @elseif(request('month'))
             <p>Bulan: {{ \Carbon\Carbon::parse(request('month'))->isoFormat('MMMM Y') }}</p>
         @elseif(request('year'))
