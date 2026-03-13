@@ -163,7 +163,8 @@ class DashboardController extends Controller
 
         $rawTodayEvents = $rawTodayEvents->concat(
             KunjunganKerja::with(['provinsi'])
-                ->whereDate('tanggal_kunjungan', $targetDate)
+                ->whereDate('tanggal_kunjungan', '<=', $targetDate)
+                ->whereRaw('DATE(COALESCE(tanggal_selesai, tanggal_kunjungan)) >= ?', [$targetDate->format('Y-m-d')])
                 ->get()
                 ->map(fn($item) => [
                     'title' => $item->nama_kegiatan,

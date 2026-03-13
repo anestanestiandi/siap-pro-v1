@@ -48,8 +48,34 @@
         </div>
     </div>
 
-    {{-- Right Section: Actions & Search (Only on Index Pages) --}}
-    <div class="flex items-center gap-3">
+    {{-- Right Section: Time + Actions --}}
+    <div class="flex flex-col items-end gap-2">
+        @if(request()->routeIs('dashboard'))
+            <div
+                x-data="{
+                    dateText: '',
+                    timeText: '',
+                    timer: null,
+                    updateClock() {
+                        const now = new Date();
+                        this.dateText = now
+                            .toLocaleDateString('en-US', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
+                            .toUpperCase();
+                        this.timeText = now.toLocaleTimeString('en-GB', { hour12: false });
+                    },
+                    init() {
+                        this.updateClock();
+                        this.timer = setInterval(() => this.updateClock(), 1000);
+                    }
+                }"
+                class="text-right leading-tight"
+            >
+                <p class="text-sm font-bold text-[#3B5286] uppercase tracking-widest" x-text="dateText"></p>
+                <p class="text-xs font-semibold text-[#3B5286]/90 tracking-[0.2em]" x-text="timeText"></p>
+            </div>
+        @endif
+
+        <div class="flex items-center gap-3">
         @php
             $routeName = request()->route()->getName();
             $isEksternal = Auth::user()->role === 'eksternal';
@@ -233,5 +259,6 @@
             </a>
         @endif
 
+        </div>
     </div>
 </header>

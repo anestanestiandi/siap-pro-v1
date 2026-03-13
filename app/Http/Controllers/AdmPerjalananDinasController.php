@@ -219,8 +219,8 @@ class AdmPerjalananDinasController extends Controller
             'nama_kegiatan' => 'required|string|max:255',
             'tanggal' => 'required|string', // Range format date
             'id_jenis_perjalanan_dinas' => 'required|exists:master_jenis_perjalanan_dinas,id_jenis_perjalanan',
-            'pelaksana' => 'required|array',
-            'pelaksana.*' => 'string',
+            'pelaksana' => 'required|array|max:100',
+            'pelaksana.*' => 'string|max:255',
             'tujuan' => 'required|string',
             'petugas_id' => 'nullable|array',
             'petugas_id.*' => 'exists:master_petugas_protokol,id_petugas',
@@ -299,8 +299,8 @@ class AdmPerjalananDinasController extends Controller
             'nama_kegiatan' => 'required|string|max:255',
             'tanggal' => 'required|string', // Range format date
             'id_jenis_perjalanan_dinas' => 'required|exists:master_jenis_perjalanan_dinas,id_jenis_perjalanan',
-            'pelaksana' => 'required|array',
-            'pelaksana.*' => 'string',
+            'pelaksana' => 'required|array|max:100',
+            'pelaksana.*' => 'string|max:255',
             'tujuan' => 'required|string',
             'petugas_id' => 'nullable|array',
             'petugas_id.*' => 'exists:master_petugas_protokol,id_petugas',

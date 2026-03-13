@@ -34,7 +34,8 @@ class KunjunganKerjaController extends Controller
         // 2. Define Filter Logic (Closure for reusability)
         $applyFilter = function ($q) use ($request) {
             if ($request->filled('start_date') && $request->filled('end_date')) {
-                $q->whereBetween('tanggal_kunjungan', [$request->start_date, $request->end_date]);
+                $q->whereDate('tanggal_kunjungan', '<=', $request->end_date)
+                    ->whereRaw('DATE(COALESCE(tanggal_selesai, tanggal_kunjungan)) >= ?', [$request->start_date]);
             } elseif ($request->filled('month')) {
                 try {
                     $date = \Carbon\Carbon::parse($request->month);
@@ -267,8 +268,8 @@ class KunjunganKerjaController extends Controller
     {
         $validated = $request->validate([
             'nama_kegiatan' => 'required|string|max:255',
-            'tanggal_kunjungan' => 'required|date',
-            'waktu_mulai' => 'required',
+            'tanggal' => 'required|string',
+            'waktu_mulai' => 'nullable',
             'id_jenis_kunjungan' => 'required|exists:master_jenis_kunjungan,id_jenis_kunjungan',
             'tipe_tujuan' => 'required|in:dalam_negeri,luar_negeri',
             'id_provinsi' => 'required_if:tipe_tujuan,dalam_negeri|nullable|exists:master_provinsi,id_provinsi',
@@ -277,7 +278,7 @@ class KunjunganKerjaController extends Controller
             'anggota_dewan_id.*' => 'exists:master_anggota_dewan,id_anggota',
             'petugas_id' => 'nullable|array',
             'petugas_id.*' => 'exists:master_petugas_protokol,id_petugas',
-            'rombongan' => 'nullable|array',
+            'rombongan' => 'nullable|array|max:100',
             'rombongan.*' => 'nullable|string|max:255',
             'file_pendukung' => 'nullable|file|mimes:pdf,doc,docx,jpeg,jpg,png,xls,xlsx|max:10240',
         ]);
@@ -286,6 +287,8 @@ class KunjunganKerjaController extends Controller
         if (isset($validated['rombongan'])) {
             $validated['rombongan'] = array_filter($validated['rombongan'], fn($val) => !empty(trim($val)));
         }
+
+        $dates = $this->parseDateRange($validated['tanggal']);
 
         DB::beginTransaction();
         try {
@@ -296,8 +299,9 @@ class KunjunganKerjaController extends Controller
 
             $kunjungan = KunjunganKerja::create([
                 'nama_kegiatan' => $validated['nama_kegiatan'],
-                'tanggal_kunjungan' => $validated['tanggal_kunjungan'],
-                'waktu' => $validated['waktu_mulai'],
+                'tanggal_kunjungan' => $dates['start'],
+                'tanggal_selesai' => $dates['end'],
+                'waktu' => $validated['waktu_mulai'] ?? null,
                 'id_jenis_kunjungan' => $validated['id_jenis_kunjungan'],
                 'tipe_tujuan' => $validated['tipe_tujuan'],
                 'id_provinsi' => $validated['tipe_tujuan'] == 'dalam_negeri' ? $validated['id_provinsi'] : null,
@@ -362,8 +366,8 @@ class KunjunganKerjaController extends Controller
 
         $validated = $request->validate([
             'nama_kegiatan' => 'required|string|max:255',
-            'tanggal_kunjungan' => 'required|date',
-            'waktu_mulai' => 'required',
+            'tanggal' => 'required|string',
+            'waktu_mulai' => 'nullable',
             'id_jenis_kunjungan' => 'required|exists:master_jenis_kunjungan,id_jenis_kunjungan',
             'tipe_tujuan' => 'required|in:dalam_negeri,luar_negeri',
             'id_provinsi' => 'required_if:tipe_tujuan,dalam_negeri|nullable|exists:master_provinsi,id_provinsi',
@@ -372,7 +376,7 @@ class KunjunganKerjaController extends Controller
             'anggota_dewan_id.*' => 'exists:master_anggota_dewan,id_anggota',
             'petugas_id' => 'nullable|array',
             'petugas_id.*' => 'exists:master_petugas_protokol,id_petugas',
-            'rombongan' => 'nullable|array',
+            'rombongan' => 'nullable|array|max:100',
             'rombongan.*' => 'nullable|string|max:255',
             'file_pendukung' => 'nullable|file|mimes:pdf,doc,docx,jpeg,jpg,png,xls,xlsx|max:10240',
         ]);
@@ -381,6 +385,8 @@ class KunjunganKerjaController extends Controller
         if (isset($validated['rombongan'])) {
             $validated['rombongan'] = array_filter($validated['rombongan'], fn($val) => !empty(trim($val)));
         }
+
+        $dates = $this->parseDateRange($validated['tanggal']);
 
         DB::beginTransaction();
         try {
@@ -394,8 +400,9 @@ class KunjunganKerjaController extends Controller
 
             $updateData = [
                 'nama_kegiatan' => $validated['nama_kegiatan'],
-                'tanggal_kunjungan' => $validated['tanggal_kunjungan'],
-                'waktu' => $validated['waktu_mulai'],
+                'tanggal_kunjungan' => $dates['start'],
+                'tanggal_selesai' => $dates['end'],
+                'waktu' => $validated['waktu_mulai'] ?? null,
                 'id_jenis_kunjungan' => $validated['id_jenis_kunjungan'],
                 'tipe_tujuan' => $validated['tipe_tujuan'],
                 'id_provinsi' => $validated['tipe_tujuan'] == 'dalam_negeri' ? $validated['id_provinsi'] : null,
@@ -418,6 +425,18 @@ class KunjunganKerjaController extends Controller
             DB::rollBack();
             return back()->withInput()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
+    }
+
+    private function parseDateRange(string $dateRange): array
+    {
+        $dates = preg_split('/(\s+to\s+|\s+-\s+)/', $dateRange);
+        $start = trim($dates[0] ?? '');
+        $end = trim($dates[1] ?? $start);
+
+        return [
+            'start' => $start,
+            'end' => $end,
+        ];
     }
 
     /**

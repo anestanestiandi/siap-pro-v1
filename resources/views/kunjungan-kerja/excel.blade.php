@@ -30,7 +30,7 @@
             <tr>
                 <td>{{ $loop->iteration }}</td>
                 @if(in_array('tanggal', $columns))
-                    <td style="vnd.ms-excel.numberformat:@">{{ \Carbon\Carbon::parse($item->tanggal_kunjungan)->isoFormat('D MMMM Y') }}</td>
+
                 @endif
                 @if(in_array('waktu', $columns))
                     <td style="vnd.ms-excel.numberformat:@">{{ $item->waktu ? \Carbon\Carbon::parse($item->waktu)->format('H:i') . ' WIB' : '-' }}</td>

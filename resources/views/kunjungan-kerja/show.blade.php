@@ -40,7 +40,16 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0h18m-18 0a2.25 2.25 0 0 0 2.25 2.25h13.5a2.25 2.25 0 0 0 2.25-2.25m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
                                             </svg>
                                         </div>
-                                        <span class="font-medium">{{ $item->tanggal_kunjungan ? $item->tanggal_kunjungan->isoFormat('dddd, D MMMM Y') : '-' }}</span>
+                                        <span class="font-medium">
+                                            @if($item->tanggal_kunjungan)
+                                                {{ $item->tanggal_kunjungan->isoFormat('dddd, D MMMM Y') }}
+                                                @if($item->tanggal_selesai && $item->tanggal_selesai->ne($item->tanggal_kunjungan))
+                                                    - {{ $item->tanggal_selesai->isoFormat('dddd, D MMMM Y') }}
+                                                @endif
+                                            @else
+                                                -
+                                            @endif
+                                        </span>
                                     </div>
                                     <div class="flex items-center gap-2.5">
                                         <div class="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400">
