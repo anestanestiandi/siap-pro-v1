@@ -24,4 +24,18 @@ foreach ($dirs as $dir) {
 // Redirect storage path for Laravel
 $_ENV['VERCEL_VIRTUAL_STORAGE'] = $storage;
 
-require __DIR__ . '/../public/index.php';
+try {
+    require __DIR__ . '/../public/index.php';
+} catch (\Throwable $e) {
+    // Log error to stderr for Vercel
+    $msg = sprintf(
+        "Fatal Error: %s in %s:%d\nStack trace:\n%s",
+        $e->getMessage(),
+        $e->getFile(),
+        $e->getLine(),
+        $e->getTraceAsString()
+    );
+    error_log($msg);
+    echo "<h1>A fatal error occurred</h1>";
+    echo "<pre>" . htmlspecialchars($msg) . "</pre>";
+}
